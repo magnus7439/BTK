@@ -171,6 +171,7 @@
 <audio id="audioPlayer" preload="auto"></audio>
 
 <script>
+    // URL convertida para puxar o CSV da planilha do Google
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
 
     const trackSelect = document.getElementById('trackSelect');
@@ -185,6 +186,7 @@
 
     let tracks = [];
 
+    // Trava de afinação: impede que a música fique aguda/grave ao mudar a velocidade
     function applyPitchPreservation() {
         audio.preservesPitch = true;
         audio.webkitPreservesPitch = true;
@@ -206,6 +208,7 @@
             const csvText = await response.text();
             tracks = parseCSV(csvText);
 
+            // Armazenar no navegador caso falte internet no próximo ensaio
             localStorage.setItem('btk_tracks_cache', JSON.stringify(tracks));
             
             updateStatus('Online', 'online');
@@ -218,7 +221,7 @@
             if (cachedTracks) {
                 tracks = JSON.parse(cachedTracks);
                 updateStatus('Modo Offline', 'offline');
-                toastMessage.textContent = 'Sem conexão. Usando faixas salvas em cache.';
+                toastMessage.textContent = 'Sem conexão. Usando músicas salvas em cache.';
                 populateSelect(tracks);
             } else {
                 updateStatus('Erro', 'offline');
@@ -227,19 +230,54 @@
         }
     }
 
+    // Leitor de CSV ROBUSTO: Ignora vírgulas dentro do nome da música
     function parseCSV(text) {
-        const lines = text.split('\n');
+        const lines = text.trim().split('\n');
         const parsed = [];
-        lines.forEach(line => {
-            const parts = line.split(',');
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            
+            let parts = [];
+            let currentPart = '';
+            let insideQuotes = false;
+            
+            // Lógica que lê caractere por caractere (perfeita para planilhas)
+            for (let j = 0; j < line.length; j++) {
+                const char = line[j];
+                if (char === '"') {
+                    insideQuotes = !insideQuotes;
+                } else if (char === ',' && !insideQuotes) {
+                    parts.push(currentPart);
+                    currentPart = '';
+                } else {
+                    currentPart += char;
+                }
+            }
+            parts.push(currentPart);
+            
             if (parts.length >= 2) {
-                const name = parts[0].replace(/"/g, '').trim();
-                const url = parts[1].replace(/"/g, '').trim();
-                if (name && url && !name.toLowerCase().includes('nome')) {
+                const name = parts[0].trim();
+                let url = parts[1].trim();
+                
+                // Pular o cabeçalho
+                if (name.toLowerCase() === 'nome' || url.toLowerCase() === 'link') continue;
+                
+                // Otimização para LINKS DO DROPBOX tocarem direto sem bloquear
+                if (url.includes('dropbox.com')) {
+                    if (url.includes('dl=0')) {
+                        url = url.replace('dl=0', 'raw=1');
+                    } else if (!url.includes('raw=1') && !url.includes('dl=1')) {
+                        url += (url.includes('?') ? '&' : '?') + 'raw=1';
+                    }
+                }
+                
+                if (name && url) {
                     parsed.push({ name, url });
                 }
             }
-        });
+        }
         return parsed;
     }
 
@@ -278,8 +316,9 @@
         if (audio.paused) {
             audio.play().then(() => {
                 btnPlay.textContent = 'PAUSE';
-            }).catch(() => {
-                toastMessage.textContent = 'Erro ao tocar. Verifique se o link do áudio é válido ou público.';
+            }).catch((err) => {
+                console.error(err);
+                toastMessage.textContent = 'Erro ao tocar. Verifique o link do Dropbox.';
             });
         } else {
             audio.pause();
@@ -316,6 +355,7 @@
         statusBadge.className = `status-badge ${type}`;
     }
 
+    // Inicia a aplicação
     init();
 </script>
 </body>
