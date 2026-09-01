@@ -27,6 +27,14 @@
             border: 1px solid rgba(255,255,255,0.2); font-size: 1em; cursor: pointer;
         }
 
+        /* Painel do Cronômetro Contínuo */
+        .timer-display {
+            background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(0, 188, 212, 0.3);
+            border-radius: 10px; padding: 10px; text-align: center; margin-bottom: 15px;
+        }
+        .timer-label { font-size: 0.75em; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+        .timer-digits { font-family: monospace; font-size: 2em; font-weight: bold; color: #00bcd4; }
+
         .bpm-container {
             background: rgba(0, 188, 212, 0.05); padding: 14px; border-radius: 8px;
             border: 1px solid rgba(0, 188, 212, 0.2); margin-bottom: 20px;
@@ -77,13 +85,19 @@
 <body>
 
     <div class="multitrack-container">
-        <h2>🎛️ BTK - Percussão (conectar com o Google)</h2>
+        <h2>🎛️ BTK - Percussão novo (conectar com o Google)</h2>
 
         <div class="select-box">
             <label for="song-select">SELECIONAR RITMO:</label>
             <select id="song-select" onchange="trocarMusica(this.value)">
                 <option value="">Carregando lista...</option>
             </select>
+        </div>
+
+        <!-- Visor do Cronômetro -->
+        <div class="timer-display">
+            <div class="timer-label">⏱️ Tempo Decorrido (Contínuo)</div>
+            <div class="timer-digits" id="timer-text">00:00.0</div>
         </div>
 
         <div class="bpm-container">
@@ -108,7 +122,7 @@
     </div>
 
     <script>
-        const CACHE_NAME = 'multitrack-sheet-audio-v6';
+        const CACHE_NAME = 'multitrack-sheet-audio-v7';
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv";
 
         let dadosPlanilha = [];
@@ -125,6 +139,11 @@
         let isLoaded = false;
         let startTime = 0;
         let pauseOffset = 0;
+
+        // Variáveis do Cronômetro Contínuo
+        let elapsedTime = 0;
+        let timerInterval = null;
+        let lastTimestamp = 0;
 
         function normalizarUrl(url) {
             if (!url) return '';
@@ -180,7 +199,6 @@
                 }).filter(d => d.nomeMusica && d.urls.length > 0);
 
                 preencherSelect();
-                // 💡 Não escolhe a primeira música automaticamente. Aguarda a seleção manual do usuário.
                 statusText.innerText = "📋 Selecione um ritmo no menu acima para carregar as pistas.";
 
             } catch (err) {
@@ -205,7 +223,6 @@
             isLoaded = false;
             const btnPlay = document.getElementById('btn-play-master');
 
-            // Se o usuário selecionar a opção padrão "-- SELECIONE UM RITMO --"
             if (index === "" || index === null || index === undefined) {
                 document.getElementById('track-container').innerHTML = '';
                 btnPlay.disabled = true;
@@ -319,6 +336,9 @@
             isPlaying = true;
             document.getElementById('btn-play-master').innerText = "⏸ PAUSE";
             document.getElementById('status-text').innerText = `🔁 Reproduzindo em Loop (${Math.round(currentPlaybackRate * 100)}% BPM)...`;
+
+            // Inicia a contagem contínua do timer
+            startTimer();
         }
 
         function pauseAll() {
@@ -330,6 +350,9 @@
             isPlaying = false;
             document.getElementById('btn-play-master').innerText = "▶ PLAY";
             document.getElementById('status-text').innerText = "⏸ Pausado.";
+
+            // Congela a contagem do timer
+            stopTimer();
         }
 
         function stopAll() {
@@ -343,6 +366,47 @@
             }
             const statusText = document.getElementById('status-text');
             if (statusText && isLoaded) statusText.innerText = "⏹ Parado.";
+
+            // Reseta o cronômetro para 00:00.0
+            resetTimer();
+        }
+
+        // Lógica do Cronômetro Contínuo
+        function startTimer() {
+            lastTimestamp = performance.now();
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                const now = performance.now();
+                const delta = now - lastTimestamp;
+                lastTimestamp = now;
+                elapsedTime += delta;
+                renderTimer();
+            }, 100);
+        }
+
+        function stopTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
+        function resetTimer() {
+            stopTimer();
+            elapsedTime = 0;
+            renderTimer();
+        }
+
+        function renderTimer() {
+            const totalMs = Math.floor(elapsedTime);
+            const ms = Math.floor((totalMs % 1000) / 100);
+            const totalSec = Math.floor(totalMs / 1000);
+            const minutes = Math.floor(totalSec / 60);
+            const seconds = totalSec % 60;
+
+            const mStr = String(minutes).padStart(2, '0');
+            const sStr = String(seconds).padStart(2, '0');
+
+            document.getElementById('timer-text').innerText = `${mStr}:${sStr}.${ms}`;
         }
 
         function alterarVelocidade(val) {
