@@ -220,7 +220,7 @@
 
 <script>
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
-    const CACHE_NAME = 'btk-audio-cache-v2';
+    const CACHE_NAME = 'btk-audio-cache-v3';
 
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
@@ -233,18 +233,13 @@
     const statusBadge = document.getElementById('status');
     const toastMessage = document.getElementById('toastMessage');
 
-    let audioCtx = null;
     let songsData = [];
-    let loadedBuffers = [];
-    let gainNodes = [];
-    let sourceNodes = [];
-    
+    let audioElements = [];
+    let objectUrls = [];
     let isPlaying = false;
-    let startTime = 0;
-    let pauseOffset = 0;
-    let timerInterval = null;
+    let syncInterval = null;
+    let lastMasterTime = 0;
 
-    // Converte o link do Dropbox para o servidor de arquivos direto (resolve bloqueio CORS)
     function fixDropboxUrl(url) {
         if (!url) return '';
         url = url.trim();
@@ -342,26 +337,37 @@
         trackSelect.disabled = false;
     }
 
-    async function fetchAudioWithCache(url) {
+    // Baixa o áudio e gera uma URL do Blob local no navegador para uso offline/cache
+    async function getAudioBlobUrl(url) {
         const cache = await caches.open(CACHE_NAME);
         let response = await cache.match(url);
 
         if (!response) {
             toastMessage.textContent = 'Baixando áudio para o cache...';
-            response = await fetch(url, { mode: 'cors' });
-            if (!response.ok) {
-                throw new Error(`Erro ao carregar arquivo (HTTP ${response.status})`);
+            response = await fetch(url);
+            if (response.ok) {
+                cache.put(url, response.clone());
             }
-            cache.put(url, response.clone());
         } else {
             toastMessage.textContent = 'Carregando do cache local...';
         }
 
-        return await response.arrayBuffer();
+        const blob = await response.blob();
+        const objUrl = URL.createObjectURL(blob);
+        objectUrls.push(objUrl);
+        return objUrl;
+    }
+
+    function applyPitchPreservation(audio) {
+        audio.preservesPitch = true;
+        audio.webkitPreservesPitch = true;
+        audio.mozPreservesPitch = true;
     }
 
     trackSelect.addEventListener('change', async (e) => {
         stopAll();
+        clearCurrentAudioObjects();
+
         const index = e.target.value;
 
         if (index === '') {
@@ -371,28 +377,25 @@
             return;
         }
 
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-
         const selectedSong = songsData[index];
         btnPlay.disabled = true;
         btnStop.disabled = true;
         stemsContainer.innerHTML = '';
-        loadedBuffers = [];
-        gainNodes = [];
+        audioElements = [];
 
         try {
             for (let i = 0; i < selectedSong.urls.length; i++) {
                 toastMessage.textContent = `Carregando faixa ${i + 1} de ${selectedSong.urls.length}...`;
-                const arrayBuffer = await fetchAudioWithCache(selectedSong.urls[i]);
-                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
                 
-                loadedBuffers.push(audioBuffer);
+                const blobUrl = await getAudioBlobUrl(selectedSong.urls[i]);
+                const audio = new Audio(blobUrl);
+                
+                audio.loop = true;
+                audio.preload = 'auto';
+                applyPitchPreservation(audio);
+                audio.playbackRate = speedSlider.value / 100;
 
-                const gainNode = audioCtx.createGain();
-                gainNode.connect(audioCtx.destination);
-                gainNodes.push(gainNode);
+                audioElements.push(audio);
 
                 const row = document.createElement('div');
                 row.className = 'stem-row';
@@ -406,12 +409,11 @@
                 toggleBtn.textContent = 'ON';
 
                 toggleBtn.addEventListener('click', () => {
-                    if (gainNode.gain.value === 1) {
-                        gainNode.gain.value = 0;
+                    audio.muted = !audio.muted;
+                    if (audio.muted) {
                         toggleBtn.textContent = 'OFF';
                         toggleBtn.className = 'btn-toggle off';
                     } else {
-                        gainNode.gain.value = 1;
                         toggleBtn.textContent = 'ON';
                         toggleBtn.className = 'btn-toggle on';
                     }
@@ -424,55 +426,45 @@
 
             btnPlay.disabled = false;
             btnStop.disabled = false;
-            toastMessage.textContent = `Pronto! ${selectedSong.name} sincronizado.`;
+            toastMessage.textContent = `Pronto! ${selectedSong.name} carregado.`;
         } catch (err) {
             console.error(err);
-            toastMessage.textContent = 'Erro ao processar áudios. Verifique as permissões dos links no Dropbox.';
+            toastMessage.textContent = 'Erro ao carregar arquivos de áudio.';
         }
     });
 
     function playAll() {
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (audioElements.length === 0) return;
 
-        sourceNodes = [];
-        const playTime = audioCtx.currentTime + 0.05;
-        const currentRate = speedSlider.value / 100;
+        const masterTime = audioElements[0].currentTime;
 
-        loadedBuffers.forEach((buffer, index) => {
-            const source = audioCtx.createBufferSource();
-            source.buffer = buffer;
-            source.loop = true;
-            source.playbackRate.value = currentRate;
-
-            source.connect(gainNodes[index]);
-            source.start(playTime, pauseOffset % buffer.duration);
-            sourceNodes.push(source);
+        audioElements.forEach(audio => {
+            audio.currentTime = masterTime;
+            audio.playbackRate = speedSlider.value / 100;
+            applyPitchPreservation(audio);
+            audio.play().catch(e => console.error(e));
         });
 
-        startTime = audioCtx.currentTime - pauseOffset;
         isPlaying = true;
         btnPlay.textContent = 'PAUSE';
-        startTimer();
+        startSyncAndTimer();
     }
 
     function pauseAll() {
-        sourceNodes.forEach(source => source.stop());
-        pauseOffset = audioCtx.currentTime - startTime;
+        audioElements.forEach(audio => audio.pause());
         isPlaying = false;
         btnPlay.textContent = 'PLAY';
-        stopTimer();
+        stopSyncAndTimer();
     }
 
     function stopAll() {
-        sourceNodes.forEach(source => {
-            try { source.stop(); } catch(e){}
+        audioElements.forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0;
         });
         isPlaying = false;
-        pauseOffset = 0;
         btnPlay.textContent = 'PLAY';
-        stopTimer();
+        stopSyncAndTimer();
         timerDisplay.textContent = '00:00.0';
     }
 
@@ -492,39 +484,63 @@
         const val = e.target.value;
         speedDisplay.textContent = `${val}%`;
         const rate = val / 100;
-        sourceNodes.forEach(source => {
-            source.playbackRate.value = rate;
+
+        audioElements.forEach(audio => {
+            audio.playbackRate = rate;
+            applyPitchPreservation(audio);
         });
     });
 
+    function startSyncAndTimer() {
+        stopSyncAndTimer();
+        syncInterval = setInterval(() => {
+            if (!isPlaying || audioElements.length === 0) return;
+
+            const master = audioElements[0];
+
+            // Trata o reinício do Loop contínuo
+            if (master.currentTime < lastMasterTime - 0.5) {
+                audioElements.forEach(a => a.currentTime = master.currentTime);
+            }
+            lastMasterTime = master.currentTime;
+
+            // Corrige desvios de micro-segundos entre as faixas e o mestre
+            for (let i = 1; i < audioElements.length; i++) {
+                const diff = Math.abs(audioElements[i].currentTime - master.currentTime);
+                if (diff > 0.03) {
+                    audioElements[i].currentTime = master.currentTime;
+                }
+            }
+
+            // Atualiza o tempo na tela
+            const current = master.currentTime;
+            const mins = Math.floor(current / 60).toString().padStart(2, '0');
+            const secs = Math.floor(current % 60).toString().padStart(2, '0');
+            const ms = Math.floor((current % 1) * 10);
+            timerDisplay.textContent = `${mins}:${secs}.${ms}`;
+        }, 100);
+    }
+
+    function stopSyncAndTimer() {
+        if (syncInterval) clearInterval(syncInterval);
+    }
+
+    function clearCurrentAudioObjects() {
+        objectUrls.forEach(url => URL.revokeObjectURL(url));
+        objectUrls = [];
+    }
+
     btnClearCache.addEventListener('click', async () => {
         stopAll();
+        clearCurrentAudioObjects();
         const deleted = await caches.delete(CACHE_NAME);
         localStorage.removeItem('btk_songs_manifest');
         if (deleted) {
-            toastMessage.textContent = 'Cache de áudio zerado com sucesso!';
+            toastMessage.textContent = 'Cache de áudio limpo com sucesso!';
         } else {
             toastMessage.textContent = 'Nenhum cache localizado.';
         }
     });
-
-    function startTimer() {
-        stopTimer();
-        timerInterval = setInterval(() => {
-            if (isPlaying && loadedBuffers.length > 0) {
-                const duration = loadedBuffers[0].duration;
-                const current = ((audioCtx.currentTime - startTime) * (speedSlider.value / 100)) % duration;
-                const mins = Math.floor(current / 60).toString().padStart(2, '0');
-                const secs = Math.floor(current % 60).toString().padStart(2, '0');
-                const ms = Math.floor((current % 1) * 10);
-                timerDisplay.textContent = `${mins}:${secs}.${ms}`;
-            }
-        }, 100);
-    }
-
-    function stopTimer() {
-        if (timerInterval) clearInterval(timerInterval);
-    }
 
     function updateStatus(text, type) {
         statusBadge.textContent = text;
