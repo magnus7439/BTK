@@ -171,8 +171,7 @@
 <audio id="audioPlayer" preload="auto"></audio>
 
 <script>
-    // Configurar a URL pública do CSV da sua planilha do Google Sheets
-    const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pubhtml';
+    const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
 
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
@@ -186,7 +185,6 @@
 
     let tracks = [];
 
-    // Mantém a afinação original ao alterar o andamento/BPM
     function applyPitchPreservation() {
         audio.preservesPitch = true;
         audio.webkitPreservesPitch = true;
@@ -208,7 +206,6 @@
             const csvText = await response.text();
             tracks = parseCSV(csvText);
 
-            // Armazena no navegador para o caso de ficar sem internet
             localStorage.setItem('btk_tracks_cache', JSON.stringify(tracks));
             
             updateStatus('Online', 'online');
@@ -221,7 +218,7 @@
             if (cachedTracks) {
                 tracks = JSON.parse(cachedTracks);
                 updateStatus('Modo Offline', 'offline');
-                toastMessage.textContent = 'Sem conexão. Usando músicas salvas em cache.';
+                toastMessage.textContent = 'Sem conexão. Usando faixas salvas em cache.';
                 populateSelect(tracks);
             } else {
                 updateStatus('Erro', 'offline');
@@ -282,7 +279,7 @@
             audio.play().then(() => {
                 btnPlay.textContent = 'PAUSE';
             }).catch(() => {
-                toastMessage.textContent = 'Erro ao tocar. Verifique se o link do áudio é válido.';
+                toastMessage.textContent = 'Erro ao tocar. Verifique se o link do áudio é válido ou público.';
             });
         } else {
             audio.pause();
