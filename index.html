@@ -3,177 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Player Multitrack (Loop Infinito)</title>
+    <title>Player Multitrack (Planilha com Múltiplas Músicas)</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #121212;
-            color: #ffffff;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
+            background: #121212; color: #ffffff; padding: 20px;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
         }
-
         .multitrack-container {
-            background: #1e1e1e;
-            padding: 24px;
-            border-radius: 16px;
-            width: 100%;
-            max-width: 720px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            background: #1e1e1e; padding: 24px; border-radius: 16px;
+            width: 100%; max-width: 720px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-
-        h2 {
-            font-size: 1.4em;
-            margin-bottom: 20px;
-            color: #ffffff;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        h2 { font-size: 1.4em; margin-bottom: 15px; }
+        
+        .select-box {
+            margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;
+        }
+        .select-box label { font-size: 0.9em; color: #aaa; font-weight: bold; }
+        select {
+            padding: 12px; border-radius: 8px; background: #2a2a2a; color: #fff;
+            border: 1px solid rgba(255,255,255,0.2); font-size: 1em; cursor: pointer;
         }
 
         .master-controls {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(255, 255, 255, 0.04);
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            gap: 12px;
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+            background: rgba(255, 255, 255, 0.04); padding: 16px; border-radius: 12px;
+            margin-bottom: 20px; gap: 12px;
         }
-
-        .master-buttons {
-            display: flex;
-            gap: 10px;
-        }
-
+        .master-buttons { display: flex; gap: 10px; }
         .btn-master {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 30px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.2s ease;
+            padding: 12px 24px; border: none; border-radius: 30px; font-weight: bold;
+            cursor: pointer; font-size: 0.9em; text-transform: uppercase;
         }
-
-        .btn-play {
-            background: #28a745;
-            color: #ffffff;
-        }
-        .btn-play:hover:not(:disabled) {
-            background: #218838;
-        }
-        .btn-play:disabled {
-            background: #444444;
-            color: #888888;
-            cursor: not-allowed;
-        }
-
-        .btn-stop {
-            background: #dc3545;
-            color: #ffffff;
-        }
-        .btn-stop:hover {
-            background: #c82333;
-        }
-
+        .btn-play { background: #28a745; color: #ffffff; }
+        .btn-play:disabled { background: #444444; color: #888888; cursor: not-allowed; }
+        .btn-stop { background: #dc3545; color: #ffffff; }
         .btn-cache {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ccc;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 8px 14px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.8em;
-            transition: all 0.2s;
-        }
-        .btn-cache:hover {
-            background: rgba(220, 53, 69, 0.2);
-            border-color: #dc3545;
-            color: #fff;
+            background: rgba(255, 255, 255, 0.1); color: #ccc; border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 14px; border-radius: 20px; cursor: pointer; font-size: 0.8em;
         }
 
         .status-box {
-            font-size: 0.85em;
-            color: #00bcd4;
-            margin-bottom: 20px;
-            padding: 10px;
-            background: rgba(0, 188, 212, 0.1);
-            border-radius: 6px;
-            border-left: 4px solid #00bcd4;
+            font-size: 0.85em; color: #00bcd4; margin-bottom: 20px; padding: 10px;
+            background: rgba(0, 188, 212, 0.1); border-radius: 6px; border-left: 4px solid #00bcd4;
         }
 
-        .track-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
+        .track-list { display: flex; flex-direction: column; gap: 12px; }
         .track-row {
-            display: grid;
-            grid-template-columns: 140px 100px 1fr;
-            align-items: center;
-            gap: 14px;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: grid; grid-template-columns: 140px 100px 1fr; align-items: center;
+            gap: 14px; background: rgba(255, 255, 255, 0.03); padding: 12px 16px;
+            border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);
         }
-
-        .track-name {
-            font-weight: 600;
-            font-size: 0.9em;
-            color: #ffeb3b;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
+        .track-name { font-weight: 600; font-size: 0.9em; color: #ffeb3b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .btn-mute {
-            padding: 8px 12px;
-            border: 1px solid #28a745;
-            background: rgba(40, 167, 69, 0.15);
-            color: #28a745;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.75em;
-            font-weight: bold;
-            text-transform: uppercase;
-            transition: all 0.2s ease;
-            text-align: center;
+            padding: 8px 12px; border: 1px solid #28a745; background: rgba(40, 167, 69, 0.15);
+            color: #28a745; border-radius: 20px; cursor: pointer; font-size: 0.75em; font-weight: bold;
         }
-
-        .btn-mute.is-muted {
-            background: rgba(220, 53, 69, 0.85);
-            border-color: #dc3545;
-            color: #ffffff;
-        }
-
-        input[type=range] {
-            width: 100%;
-            accent-color: #00bcd4;
-            cursor: pointer;
-        }
+        .btn-mute.is-muted { background: rgba(220, 53, 69, 0.85); border-color: #dc3545; color: #ffffff; }
+        input[type=range] { width: 100%; accent-color: #00bcd4; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="multitrack-container">
-        <h2>🎛️ Player Multitrack (Loop)</h2>
+        <h2>🎛️ Player Multitrack (Planilha Google)</h2>
+
+        <div class="select-box">
+            <label for="song-select">SELECIONE A MÚSICA / RITMO:</label>
+            <select id="song-select" onchange="trocarMusica(this.value)">
+                <option value="">Carregando lista...</option>
+            </select>
+        </div>
 
         <div class="master-controls">
             <div class="master-buttons">
@@ -183,27 +85,23 @@
             <button class="btn-cache" onclick="limparCache()">🗑️ Limpar Memória Local</button>
         </div>
 
-        <div class="status-box" id="status-text">Iniciando sistema...</div>
+        <div class="status-box" id="status-text">Conectando à planilha...</div>
 
         <div class="track-list" id="track-container"></div>
     </div>
 
     <script>
-        const CACHE_NAME = 'multitrack-audio-v1';
+        const CACHE_NAME = 'multitrack-sheet-audio-v2';
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv";
 
-        const AUDIO_URLS = [
-            { name: "01. Caixa",  url: "https://www.dropbox.com/scl/fi/sua_caixa.wav?dl=0" },
-            { name: "02. Tom 1",  url: "https://www.dropbox.com/scl/fi/seu_tom1.wav?dl=0" },
-            { name: "03. Tom 2",  url: "https://www.dropbox.com/scl/fi/seu_tom2.wav?dl=0" },
-            { name: "04. Bumbo",  url: "https://www.dropbox.com/scl/fi/seu_bumbo.wav?dl=0" },
-            { name: "05. Prato",  url: "https://www.dropbox.com/scl/fi/seu_prato.wav?dl=0" }
-        ];
-
+        let dadosPlanilha = [];
+        let nomesCanais = [];
+        let audioUrlsAtuais = [];
         let audioCtx;
         let audioBuffers = [];
         let sourceNodes = [];
         let gainNodes = [];
-        let muteStates = new Array(AUDIO_URLS.length).fill(false);
+        let muteStates = [];
 
         let isPlaying = false;
         let isLoaded = false;
@@ -215,8 +113,7 @@
             let link = url.trim();
             if (link.includes('dropbox.com')) {
                 return link.replace('www.dropbox.com', 'dl.dropboxusercontent.com')
-                           .replace('?dl=0', '')
-                           .replace('&dl=0', '');
+                           .replace('?dl=0', '').replace('&dl=0', '');
             } else if (link.includes('drive.google.com') && link.includes('/d/')) {
                 const id = link.split('/d/')[1].split('/')[0];
                 return `https://drive.google.com/uc?export=download&id=${id}`;
@@ -224,11 +121,94 @@
             return link;
         }
 
+        // Divide o CSV lidando com aspas ou vírgulas internas
+        function parseCSVLine(text) {
+            const result = [];
+            let cell = '';
+            let inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                let c = text[i];
+                if (c === '"') { inQuotes = !inQuotes; }
+                else if (c === ',' && !inQuotes) {
+                    result.push(cell.trim());
+                    cell = '';
+                } else { cell += c; }
+            }
+            result.push(cell.trim());
+            return result;
+        }
+
+        async function carregarPlanilha() {
+            const statusText = document.getElementById('status-text');
+            try {
+                const res = await fetch(SHEET_CSV_URL);
+                if (!res.ok) throw new Error("Não foi possível acessar a planilha.");
+                
+                const csvText = await res.text();
+                const linhas = csvText.split('\n').filter(l => l.trim() !== '');
+
+                if (linhas.length < 2) {
+                    throw new Error("A planilha precisa ter um cabeçalho e pelo menos 1 linha de dados.");
+                }
+
+                // Linha 0: Cabeçalho (Coluna A = Nome da música, Colunas B.. = Nomes das Pistas)
+                const cabecalho = parseCSVLine(linhas[0]);
+                nomesCanais = cabecalho.slice(1);
+
+                // Linhas seguintes: Dados das Músicas e Links
+                dadosPlanilha = linhas.slice(1).map(linha => {
+                    const colunas = parseCSVLine(linha);
+                    return {
+                        nomeMusica: colunas[0],
+                        urls: colunas.slice(1)
+                    };
+                }).filter(d => d.nomeMusica && d.urls.length > 0);
+
+                preencherSelect();
+                if (dadosPlanilha.length > 0) {
+                    trocarMusica(0);
+                }
+
+            } catch (err) {
+                console.error(err);
+                statusText.innerText = "⚠️ Erro ao carregar planilha. Verifique as permissões do CSV publicado.";
+            }
+        }
+
+        function preencherSelect() {
+            const select = document.getElementById('song-select');
+            select.innerHTML = '';
+            dadosPlanilha.forEach((item, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.innerText = item.nomeMusica;
+                select.appendChild(opt);
+            });
+        }
+
+        async function trocarMusica(index) {
+            stopAll();
+            isLoaded = false;
+            const btnPlay = document.getElementById('btn-play-master');
+            btnPlay.disabled = true;
+            btnPlay.innerText = "Carregando...";
+
+            const musicaSelecionada = dadosPlanilha[index];
+            audioUrlsAtuais = musicaSelecionada.urls.map((url, i) => ({
+                name: nomesCanais[i] || `Pista ${i+1}`,
+                url: url
+            })).filter(track => track.url && track.url.length > 5);
+
+            muteStates = new Array(audioUrlsAtuais.length).fill(false);
+            renderTracks();
+            await loadAllTracksWithCache();
+        }
+
         function renderTracks() {
             const container = document.getElementById('track-container');
             container.innerHTML = '';
 
-            AUDIO_URLS.forEach((track, index) => {
+            audioUrlsAtuais.forEach((track, index) => {
                 container.innerHTML += `
                     <div class="track-row">
                         <span class="track-name" title="${track.name}">${track.name}</span>
@@ -242,24 +222,26 @@
         }
 
         async function loadAllTracksWithCache() {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
             const statusText = document.getElementById('status-text');
 
             try {
                 const cache = await caches.open(CACHE_NAME);
 
-                const promises = AUDIO_URLS.map(async (item, index) => {
+                const promises = audioUrlsAtuais.map(async (item, index) => {
                     const finalUrl = normalizarUrl(item.url);
-                    statusText.innerText = `Verificando cache da faixa ${index + 1} de ${AUDIO_URLS.length}...`;
+                    statusText.innerText = `Verificando cache da pista ${index + 1} de ${audioUrlsAtuais.length}...`;
 
                     let response = await cache.match(finalUrl);
 
                     if (!response) {
-                        statusText.innerText = `Baixando da nuvem (${index + 1}/${AUDIO_URLS.length}): ${item.name}...`;
+                        statusText.innerText = `Baixando faixa (${index + 1}/${audioUrlsAtuais.length}): ${item.name}...`;
                         const req = new Request(finalUrl, { mode: 'cors' });
                         response = await fetch(req);
                         
-                        if (!response.ok) throw new Error(`Não foi possível baixar: ${item.name}`);
+                        if (!response.ok) throw new Error(`Não foi possível baixar a pista: ${item.name}`);
                         await cache.put(req, response.clone());
                     }
 
@@ -270,48 +252,38 @@
                 audioBuffers = await Promise.all(promises);
                 isLoaded = true;
 
-                statusText.innerText = "✅ Áudios prontos na memória! Pressione PLAY para iniciar o Loop.";
+                statusText.innerText = "✅ Pistas sincronizadas e salvas no dispositivo! Pronto para tocar em Loop.";
                 const btnPlay = document.getElementById('btn-play-master');
                 btnPlay.innerText = "▶ PLAY";
                 btnPlay.disabled = false;
 
             } catch (err) {
-                console.error("Erro ao carregar faixas:", err);
-                statusText.innerText = "⚠️ Erro ao carregar arquivos de áudio. Verifique os links ou conexões CORS.";
+                console.error("Erro no carregamento:", err);
+                statusText.innerText = "⚠️ Erro ao carregar mídias da música selecionada.";
             }
         }
 
         function togglePlay() {
             if (!isLoaded) return;
             if (audioCtx.state === 'suspended') audioCtx.resume();
-
-            if (isPlaying) {
-                pauseAll();
-            } else {
-                playAll();
-            }
+            if (isPlaying) { pauseAll(); } else { playAll(); }
         }
 
         function playAll() {
-            sourceNodes = [];
-            gainNodes = [];
+            sourceNodes = []; gainNodes = [];
             const now = audioCtx.currentTime;
 
             audioBuffers.forEach((buffer, index) => {
                 const source = audioCtx.createBufferSource();
                 source.buffer = buffer;
-                
-                // 🔁 ATIVA O LOOP INFINITO
-                source.loop = true;
+                source.loop = true; // 🔁 Loop Infinito
 
                 const gain = audioCtx.createGain();
                 const volSlider = document.getElementById(`vol-${index}`).value;
-                
                 gain.gain.value = muteStates[index] ? 0 : volSlider;
 
                 source.connect(gain);
                 gain.connect(audioCtx.destination);
-
                 source.start(now, pauseOffset % buffer.duration);
 
                 sourceNodes.push(source);
@@ -321,7 +293,7 @@
             startTime = audioCtx.currentTime - pauseOffset;
             isPlaying = true;
             document.getElementById('btn-play-master').innerText = "⏸ PAUSE";
-            document.getElementById('status-text').innerText = "🔁 Reproduzindo em Loop Infinito sem paradas!";
+            document.getElementById('status-text').innerText = "🔁 Reproduzindo em Loop...";
         }
 
         function pauseAll() {
@@ -330,25 +302,22 @@
             sourceNodes.forEach(source => source.stop());
             isPlaying = false;
             document.getElementById('btn-play-master').innerText = "▶ PLAY";
-            document.getElementById('status-text').innerText = "⏸ Loop Pausado.";
+            document.getElementById('status-text').innerText = "⏸ Pausado.";
         }
 
         function stopAll() {
             if (sourceNodes.length > 0) {
-                sourceNodes.forEach(source => {
-                    try { source.stop(); } catch(e){}
-                });
+                sourceNodes.forEach(source => { try { source.stop(); } catch(e){} });
             }
-            isPlaying = false;
-            pauseOffset = 0;
-            document.getElementById('btn-play-master').innerText = "▶ PLAY";
-            document.getElementById('status-text').innerText = "⏹ Loop Parado.";
+            isPlaying = false; pauseOffset = 0;
+            const btnPlay = document.getElementById('btn-play-master');
+            if (btnPlay) btnPlay.innerText = "▶ PLAY";
+            const statusText = document.getElementById('status-text');
+            if (statusText && isLoaded) statusText.innerText = "⏹ Parado.";
         }
 
         function changeVolume(index, value) {
-            if (gainNodes[index] && !muteStates[index]) {
-                gainNodes[index].gain.value = value;
-            }
+            if (gainNodes[index] && !muteStates[index]) { gainNodes[index].gain.value = value; }
         }
 
         function toggleTrackMute(index) {
@@ -357,18 +326,16 @@
             const sliderVal = document.getElementById(`vol-${index}`).value;
 
             if (muteStates[index]) {
-                btn.classList.add('is-muted');
-                btn.innerText = "🔇 MUTE";
+                btn.classList.add('is-muted'); btn.innerText = "🔇 MUTE";
                 if (gainNodes[index]) gainNodes[index].gain.value = 0;
             } else {
-                btn.classList.remove('is-muted');
-                btn.innerText = "🔊 LIGADO";
+                btn.classList.remove('is-muted'); btn.innerText = "🔊 LIGADO";
                 if (gainNodes[index]) gainNodes[index].gain.value = sliderVal;
             }
         }
 
         async function limparCache() {
-            if (confirm("Deseja apagar os áudios salvos no dispositivo local?")) {
+            if (confirm("Deseja apagar os áudios salvos na memória local do navegador?")) {
                 await caches.delete(CACHE_NAME);
                 alert("Memória limpa com sucesso!");
                 location.reload();
@@ -376,8 +343,7 @@
         }
 
         window.addEventListener('load', () => {
-            renderTracks();
-            loadAllTracksWithCache();
+            carregarPlanilha();
         });
     </script>
 </body>
