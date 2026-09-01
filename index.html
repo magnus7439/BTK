@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BTK - Multi-Track Percussão</title>
+    <title>BTK - Multi-Track Studio</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -35,7 +35,7 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 18px;
         }
 
         .header {
@@ -76,11 +76,11 @@
         .timer-box {
             text-align: center;
             background: #181818;
-            padding: 16px;
+            padding: 14px;
             border-radius: 12px;
         }
 
-        .timer-label { font-size: 0.85rem; color: var(--subtext-color); margin-bottom: 4px; }
+        .timer-label { font-size: 0.8rem; color: var(--subtext-color); margin-bottom: 4px; }
         .timer-display { font-size: 2.5rem; font-weight: bold; font-family: monospace; color: var(--accent-color); }
 
         .speed-control {
@@ -111,8 +111,8 @@
         }
 
         button {
-            padding: 18px;
-            font-size: 1.1rem;
+            padding: 16px;
+            font-size: 1rem;
             font-weight: bold;
             border: none;
             border-radius: 12px;
@@ -125,8 +125,16 @@
 
         .btn-play { background: var(--accent-color); color: #000; }
         .btn-stop { background: #333; color: var(--text-color); }
+        .btn-clear-cache {
+            background: transparent;
+            color: var(--subtext-color);
+            border: 1px solid #444;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
 
-        /* Container de Faixas / Stems */
         .stems-container {
             display: flex;
             flex-direction: column;
@@ -134,6 +142,8 @@
             background: #181818;
             padding: 12px;
             border-radius: 12px;
+            max-height: 250px;
+            overflow-y: auto;
         }
 
         .stem-row {
@@ -145,10 +155,7 @@
             border-radius: 8px;
         }
 
-        .stem-title {
-            font-size: 0.95rem;
-            font-weight: bold;
-        }
+        .stem-title { font-size: 0.9rem; font-weight: bold; }
 
         .btn-toggle {
             padding: 8px 16px;
@@ -157,15 +164,8 @@
             min-width: 70px;
         }
 
-        .btn-toggle.on {
-            background: var(--success-color);
-            color: #fff;
-        }
-
-        .btn-toggle.off {
-            background: var(--btn-off);
-            color: var(--subtext-color);
-        }
+        .btn-toggle.on { background: var(--success-color); color: #fff; }
+        .btn-toggle.off { background: var(--btn-off); color: var(--subtext-color); }
 
         .toast {
             font-size: 0.85rem;
@@ -207,7 +207,6 @@
         <button id="btnStop" class="btn-stop" disabled>STOP</button>
     </div>
 
-    <!-- Lista dinâmica de canais/faixas com ON/OFF -->
     <div id="stemsContainer" class="stems-container">
         <div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">
             Selecione uma música para carregar os canais.
@@ -215,10 +214,13 @@
     </div>
 
     <div id="toastMessage" class="toast">Conectando à planilha...</div>
+
+    <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudios do Cache</button>
 </div>
 
 <script>
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
+    const CACHE_NAME = 'btk-audio-cache-v1';
 
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
@@ -226,16 +228,23 @@
     const speedDisplay = document.getElementById('speedDisplay');
     const btnPlay = document.getElementById('btnPlay');
     const btnStop = document.getElementById('btnStop');
+    const btnClearCache = document.getElementById('btnClearCache');
     const stemsContainer = document.getElementById('stemsContainer');
     const statusBadge = document.getElementById('status');
     const toastMessage = document.getElementById('toastMessage');
 
+    // Web Audio API
+    let audioCtx = null;
     let songsData = [];
-    let audioElements = [];
+    let loadedBuffers = [];
+    let gainNodes = [];
+    let sourceNodes = [];
+    
     let isPlaying = false;
+    let startTime = 0;
+    let pauseOffset = 0;
     let timerInterval = null;
 
-    // Garante que o link do Dropbox toque diretamente
     function fixDropboxUrl(url) {
         if (!url) return '';
         url = url.trim();
@@ -256,31 +265,29 @@
         try {
             updateStatus('Buscando...', 'offline');
             const response = await fetch(GOOGLE_SHEET_CSV_URL);
-            if (!response.ok) throw new Error('Falha na rede');
+            if (!response.ok) throw new Error('Falha de rede');
             
             const csvText = await response.text();
             songsData = parseCSV(csvText);
 
-            localStorage.setItem('btk_songs_cache', JSON.stringify(songsData));
+            localStorage.setItem('btk_songs_manifest', JSON.stringify(songsData));
             updateStatus('Online', 'online');
-            toastMessage.textContent = 'Músicas e canais atualizados!';
+            toastMessage.textContent = 'Músicas atualizadas!';
             populateSelect(songsData);
         } catch (error) {
-            console.warn('Usando dados offline em cache...', error);
-            const cached = localStorage.getItem('btk_songs_cache');
+            const cached = localStorage.getItem('btk_songs_manifest');
             if (cached) {
                 songsData = JSON.parse(cached);
                 updateStatus('Modo Offline', 'offline');
-                toastMessage.textContent = 'Modo offline: Carregado do cache.';
+                toastMessage.textContent = 'Modo Offline: Lista carregada do cache.';
                 populateSelect(songsData);
             } else {
                 updateStatus('Erro', 'offline');
-                toastMessage.textContent = 'Erro ao carregar dados da planilha.';
+                toastMessage.textContent = 'Erro ao conectar à planilha.';
             }
         }
     }
 
-    // Leitor de CSV que pega Coluna A (Nome) e Colunas B, C, D... (Audio URLs)
     function parseCSV(text) {
         const lines = text.trim().split('\n');
         const parsed = [];
@@ -308,9 +315,8 @@
 
             if (parts.length >= 2) {
                 const songName = parts[0].replace(/"/g, '').trim();
-                if (!songName || songName.toLowerCase() === 'nome' || songName.toLowerCase() === 'musica') continue;
+                if (!songName || songName.toLowerCase() === 'nome') continue;
 
-                // Coleta todas as colunas de áudio a partir da Coluna B (índice 1)
                 const urls = parts.slice(1)
                     .map(u => fixDropboxUrl(u.replace(/"/g, '')))
                     .filter(u => u.startsWith('http'));
@@ -334,8 +340,26 @@
         trackSelect.disabled = false;
     }
 
-    // Quando uma música é selecionada, carrega todos os canais de áudio simultaneamente
-    trackSelect.addEventListener('change', (e) => {
+    // Busca áudio com suporte a Cache do Navegador (Cache API)
+    async function fetchAudioWithCache(url) {
+        const cache = await caches.open(CACHE_NAME);
+        let response = await cache.match(url);
+
+        if (!response) {
+            toastMessage.textContent = 'Baixando áudio para o cache...';
+            response = await fetch(url);
+            if (response.ok) {
+                cache.put(url, response.clone());
+            }
+        } else {
+            toastMessage.textContent = 'Carregando do cache local...';
+        }
+
+        return await response.arrayBuffer();
+    }
+
+    // Seleção de música: baixa/carrega os áudios e armazena em memória (Web Audio API)
+    trackSelect.addEventListener('change', async (e) => {
         stopAll();
         const index = e.target.value;
 
@@ -346,103 +370,153 @@
             return;
         }
 
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
         const selectedSong = songsData[index];
-        audioElements = [];
+        btnPlay.disabled = true;
+        btnStop.disabled = true;
         stemsContainer.innerHTML = '';
+        loadedBuffers = [];
+        gainNodes = [];
 
-        selectedSong.urls.forEach((url, i) => {
-            const audio = new Audio(url);
-            audio.loop = true; // REPETIÇÃO INFINITA (LOOP)
-            audio.preload = 'auto';
-            audio.preservesPitch = true;
-            audio.playbackRate = speedSlider.value / 100;
+        try {
+            for (let i = 0; i < selectedSong.urls.length; i++) {
+                toastMessage.textContent = `Carregando faixa ${i + 1} de ${selectedSong.urls.length}...`;
+                const arrayBuffer = await fetchAudioWithCache(selectedSong.urls[i]);
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                
+                loadedBuffers.push(audioBuffer);
 
-            audioElements.push(audio);
+                // Criar nó de ganho (para Mute/Unmute)
+                const gainNode = audioCtx.createGain();
+                gainNode.connect(audioCtx.destination);
+                gainNodes.push(gainNode);
 
-            // Cria o controle visual (ON/OFF) para a faixa
-            const row = document.createElement('div');
-            row.className = 'stem-row';
+                // Criar interface de controle
+                const row = document.createElement('div');
+                row.className = 'stem-row';
 
-            const title = document.createElement('span');
-            title.className = 'stem-title';
-            title.textContent = `Faixa ${i + 1}`;
+                const title = document.createElement('span');
+                title.className = 'stem-title';
+                title.textContent = `Faixa ${i + 1}`;
 
-            const toggleBtn = document.createElement('button');
-            toggleBtn.className = 'btn-toggle on';
-            toggleBtn.textContent = 'ON';
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'btn-toggle on';
+                toggleBtn.textContent = 'ON';
 
-            toggleBtn.addEventListener('click', () => {
-                audio.muted = !audio.muted;
-                if (audio.muted) {
-                    toggleBtn.textContent = 'OFF';
-                    toggleBtn.className = 'btn-toggle off';
-                } else {
-                    toggleBtn.textContent = 'ON';
-                    toggleBtn.className = 'btn-toggle on';
-                }
-            });
+                toggleBtn.addEventListener('click', () => {
+                    if (gainNode.gain.value === 1) {
+                        gainNode.gain.value = 0;
+                        toggleBtn.textContent = 'OFF';
+                        toggleBtn.className = 'btn-toggle off';
+                    } else {
+                        gainNode.gain.value = 1;
+                        toggleBtn.textContent = 'ON';
+                        toggleBtn.className = 'btn-toggle on';
+                    }
+                });
 
-            row.appendChild(title);
-            row.appendChild(toggleBtn);
-            stemsContainer.appendChild(row);
-        });
+                row.appendChild(title);
+                row.appendChild(toggleBtn);
+                stemsContainer.appendChild(row);
+            }
 
-        btnPlay.disabled = false;
-        btnStop.disabled = false;
-        toastMessage.textContent = `Música carregada: ${selectedSong.name}`;
-    });
-
-    // Controle de Velocidade (Aplica a todos os canais em execução)
-    speedSlider.addEventListener('input', (e) => {
-        const val = e.target.value;
-        speedDisplay.textContent = `${val}%`;
-        audioElements.forEach(audio => {
-            audio.playbackRate = val / 100;
-            audio.preservesPitch = true;
-        });
-    });
-
-    // PLAY / PAUSE Global (Sincronizado)
-    btnPlay.addEventListener('click', () => {
-        if (!isPlaying) {
-            // Sincroniza e roda todas as faixas
-            Promise.all(audioElements.map(a => a.play())).then(() => {
-                isPlaying = true;
-                btnPlay.textContent = 'PAUSE';
-                startTimer();
-            }).catch(err => {
-                console.error(err);
-                toastMessage.textContent = 'Erro ao iniciar áudios. Verifique a conexão/links.';
-            });
-        } else {
-            audioElements.forEach(a => a.pause());
-            isPlaying = false;
-            btnPlay.textContent = 'PLAY';
-            stopTimer();
+            btnPlay.disabled = false;
+            btnStop.disabled = false;
+            toastMessage.textContent = `Pronto! ${selectedSong.name} sincronizado.`;
+        } catch (err) {
+            console.error(err);
+            toastMessage.textContent = 'Erro ao processar áudios.';
         }
     });
 
-    // STOP Global (Reseta todas para o início)
-    btnStop.addEventListener('click', () => {
-        stopAll();
-    });
+    // Disparo perfeitamente sincronizado por relógio da Web Audio API
+    function playAll() {
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        sourceNodes = [];
+        const playTime = audioCtx.currentTime + 0.05; // Pequeno offset para sincronia perfeita
+        const currentRate = speedSlider.value / 100;
+
+        loadedBuffers.forEach((buffer, index) => {
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.loop = true; // Loop Infinito sem falhas
+            source.playbackRate.value = currentRate;
+
+            source.connect(gainNodes[index]);
+            source.start(playTime, pauseOffset % buffer.duration);
+            sourceNodes.push(source);
+        });
+
+        startTime = audioCtx.currentTime - pauseOffset;
+        isPlaying = true;
+        btnPlay.textContent = 'PAUSE';
+        startTimer();
+    }
+
+    function pauseAll() {
+        sourceNodes.forEach(source => source.stop());
+        pauseOffset = audioCtx.currentTime - startTime;
+        isPlaying = false;
+        btnPlay.textContent = 'PLAY';
+        stopTimer();
+    }
 
     function stopAll() {
-        audioElements.forEach(a => {
-            a.pause();
-            a.currentTime = 0;
+        sourceNodes.forEach(source => {
+            try { source.stop(); } catch(e){}
         });
         isPlaying = false;
+        pauseOffset = 0;
         btnPlay.textContent = 'PLAY';
         stopTimer();
         timerDisplay.textContent = '00:00.0';
     }
 
+    btnPlay.addEventListener('click', () => {
+        if (!isPlaying) {
+            playAll();
+        } else {
+            pauseAll();
+        }
+    });
+
+    btnStop.addEventListener('click', () => {
+        stopAll();
+    });
+
+    speedSlider.addEventListener('input', (e) => {
+        const val = e.target.value;
+        speedDisplay.textContent = `${val}%`;
+        const rate = val / 100;
+        sourceNodes.forEach(source => {
+            source.playbackRate.value = rate;
+        });
+    });
+
+    // Limpar o cache de áudios baixados
+    btnClearCache.addEventListener('click', async () => {
+        stopAll();
+        const deleted = await caches.delete(CACHE_NAME);
+        localStorage.removeItem('btk_songs_manifest');
+        if (deleted) {
+            toastMessage.textContent = 'Cache de áudio zerado com sucesso!';
+        } else {
+            toastMessage.textContent = 'Nenhum cache localizado.';
+        }
+    });
+
     function startTimer() {
         stopTimer();
         timerInterval = setInterval(() => {
-            if (audioElements.length > 0 && isPlaying) {
-                const current = audioElements[0].currentTime;
+            if (isPlaying && loadedBuffers.length > 0) {
+                const duration = loadedBuffers[0].duration;
+                const current = ((audioCtx.currentTime - startTime) * (speedSlider.value / 100)) % duration;
                 const mins = Math.floor(current / 60).toString().padStart(2, '0');
                 const secs = Math.floor(current % 60).toString().padStart(2, '0');
                 const ms = Math.floor((current % 1) * 10);
