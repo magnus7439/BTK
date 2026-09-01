@@ -2,7 +2,6 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <!-- Meta tag essencial para travar a escala no celular como um app nativo -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BTK - Percussão</title>
     <style>
@@ -81,39 +80,60 @@
         
         /* Layout Desktop (Padrão) */
         .track-row {
-            display: grid; grid-template-columns: 140px 100px 1fr; align-items: center;
+            display: grid; grid-template-columns: 140px 75px 1fr; align-items: center;
             gap: 12px; background: rgba(255, 255, 255, 0.03); padding: 12px;
             border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05);
         }
         .track-name { font-weight: 600; font-size: 0.9em; color: #ffeb3b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .btn-mute {
-            padding: 10px; border: 1px solid #28a745; background: rgba(40, 167, 69, 0.15);
-            color: #28a745; border-radius: 8px; cursor: pointer; font-size: 0.8em; font-weight: bold; text-align: center;
-        }
-        .btn-mute.is-muted { background: rgba(220, 53, 69, 0.85); border-color: #dc3545; color: #ffffff; }
         
-        /* Sliders mais amigáveis para o toque */
+        /* NOVO: Estilo visual tipo Toggle Switch (Botão Rádio/Interruptor) */
+        .mute-switch {
+            position: relative; width: 70px; height: 32px;
+            background: rgba(40, 167, 69, 0.15); border: 1px solid #28a745;
+            border-radius: 20px; cursor: pointer; display: flex; align-items: center;
+            transition: all 0.3s ease;
+        }
+        .mute-circle {
+            position: absolute; left: 4px; width: 22px; height: 22px;
+            background: #28a745; border-radius: 50%;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        .mute-label {
+            width: 100%; text-align: right; font-size: 0.7em; font-weight: bold;
+            color: #28a745; padding-right: 10px; transition: all 0.3s ease;
+        }
+        
+        /* Estado Mutado (OFF) */
+        .mute-switch.is-muted {
+            background: rgba(220, 53, 69, 0.15); border-color: #dc3545;
+        }
+        .mute-switch.is-muted .mute-circle {
+            left: calc(100% - 26px); background: #dc3545;
+        }
+        .mute-switch.is-muted .mute-label {
+            text-align: left; color: #dc3545; padding-right: 0; padding-left: 10px;
+        }
+
         input[type=range] {
             width: 100%; accent-color: #00bcd4; cursor: pointer; height: 24px;
         }
 
-        /* 📱 REGRAS EXCLUSIVAS PARA SMARTPHONES (Telas até 768px) */
+        /* 📱 REGRAS EXCLUSIVAS PARA SMARTPHONES */
         @media (max-width: 768px) {
             body { padding: 8px; }
             .multitrack-container { padding: 14px; }
             .timer-digits { font-size: 1.8em; }
             
-            /* Reorganiza as pistas em bloco vertical de fácil toque */
             .track-row {
                 grid-template-columns: 1fr auto;
                 grid-template-areas: 
                     "name mute"
                     "slider slider";
-                gap: 8px;
-                padding: 10px 12px;
+                gap: 8px; padding: 10px 12px;
             }
             .track-name { grid-area: name; font-size: 0.95em; }
-            .btn-mute { grid-area: mute; padding: 6px 14px; }
+            .mute-switch { grid-area: mute; }
             input[type=range] { grid-area: slider; margin-top: 4px; height: 32px; }
         }
     </style>
@@ -160,7 +180,7 @@
     </div>
 
     <script>
-        const CACHE_NAME = 'multitrack-sheet-audio-v8';
+        const CACHE_NAME = 'multitrack-sheet-audio-v9';
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv";
 
         let dadosPlanilha = [];
@@ -182,7 +202,6 @@
         let timerInterval = null;
         let lastTimestamp = 0;
 
-        // Identifica o dispositivo para ajustar se necessário
         function detectarDispositivo() {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
             const badge = document.getElementById('device-tag');
@@ -297,9 +316,13 @@
                 container.innerHTML += `
                     <div class="track-row">
                         <span class="track-name" title="${track.name}">${track.name}</span>
-                        <button class="btn-mute" id="mute-btn-${index}" onclick="toggleTrackMute(${index})">
-                            🔊 LIGADO
-                        </button>
+                        
+                        <!-- Novo Switch de Mute visual -->
+                        <div class="mute-switch" id="mute-switch-${index}" onclick="toggleTrackMute(${index})">
+                            <div class="mute-circle"></div>
+                            <span class="mute-label" id="mute-label-${index}">ON</span>
+                        </div>
+
                         <input type="range" id="vol-${index}" min="0" max="1" step="0.01" value="1" oninput="changeVolume(${index}, this.value)">
                     </div>
                 `;
@@ -470,14 +493,18 @@
 
         function toggleTrackMute(index) {
             muteStates[index] = !muteStates[index];
-            const btn = document.getElementById(`mute-btn-${index}`);
+            const switchBtn = document.getElementById(`mute-switch-${index}`);
+            const label = document.getElementById(`mute-label-${index}`);
             const sliderVal = document.getElementById(`vol-${index}`).value;
 
+            // Se for mutado
             if (muteStates[index]) {
-                btn.classList.add('is-muted'); btn.innerText = "🔇 MUTE";
+                switchBtn.classList.add('is-muted');
+                label.innerText = "OFF";
                 if (gainNodes[index]) gainNodes[index].gain.value = 0;
             } else {
-                btn.classList.remove('is-muted'); btn.innerText = "🔊 LIGADO";
+                switchBtn.classList.remove('is-muted');
+                label.innerText = "ON";
                 if (gainNodes[index]) gainNodes[index].gain.value = sliderVal;
             }
         }
