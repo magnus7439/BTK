@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BTK - Percussão</title>
+    <!-- Biblioteca SoundTouchJS para Time-Stretching sem alterar o Pitch -->
+    <script src="https://cdn.jsdelivr.net/npm/soundtouchjs@0.1.30/dist/soundtouch.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -88,10 +90,10 @@
 
         <div class="bpm-container">
             <div class="bpm-header">
-                <span>⏱️ VELOCIDADE (BPM)</span>
+                <span>⏱️ VELOCIDADE / TEMPO (Tom Preservado)</span>
                 <span id="bpm-val">100%</span>
             </div>
-            <input type="range" id="bpm-range" min="0.5" max="1.5" step="0.05" value="1" oninput="alterarVelocidade(this.value)">
+            <input type="range" id="bpm-range" min="0.5" max="1.5" step="0.02" value="1" oninput="alterarVelocidade(this.value)">
         </div>
 
         <div class="master-controls">
@@ -108,7 +110,7 @@
     </div>
 
     <script>
-        const CACHE_NAME = 'multitrack-sheet-audio-v3';
+        const CACHE_NAME = 'multitrack-sheet-audio-v4';
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv";
 
         let dadosPlanilha = [];
@@ -116,15 +118,13 @@
         let audioUrlsAtuais = [];
         let audioCtx;
         let audioBuffers = [];
-        let sourceNodes = [];
+        let soundtouchNodes = [];
         let gainNodes = [];
         let muteStates = [];
-        let currentPlaybackRate = 1.0;
+        let currentTempo = 1.0;
 
         let isPlaying = false;
         let isLoaded = false;
-        let startTime = 0;
-        let pauseOffset = 0;
 
         function normalizarUrl(url) {
             if (!url) return '';
@@ -285,65 +285,73 @@
         }
 
         function playAll() {
-            sourceNodes = []; gainNodes = [];
-            const now = audioCtx.currentTime;
+            soundtouchNodes = []; 
+            gainNodes = [];
 
             audioBuffers.forEach((buffer, index) => {
-                const source = audioCtx.createBufferSource();
-                source.buffer = buffer;
-                source.loop = true;
-                source.playbackRate.value = currentPlaybackRate;
+                // Cria a fonte de áudio do SoundTouchJS para Time-Stretching
+                const source = new soundtouch.WebAudioBufferSource(buffer);
+                const st = new soundtouch.SoundTouch(audioCtx.sampleRate);
+                
+                // Configura para manter o tom original (Pitch = 1.0) e altera apenas o Tempo
+                st.pitch = 1.0;
+                st.tempo = currentTempo;
+
+                const filter = new soundtouch.SimpleFilter(source, st);
+                
+                // Cria o nó de áudio em tempo real com buffer de loop contínuo
+                const node = soundtouch.getWebAudioNode(audioCtx, filter);
 
                 const gain = audioCtx.createGain();
                 const volSlider = document.getElementById(`vol-${index}`).value;
                 gain.gain.value = muteStates[index] ? 0 : volSlider;
 
-                source.connect(gain);
+                node.connect(gain);
                 gain.connect(audioCtx.destination);
-                source.start(now, pauseOffset % buffer.duration);
 
-                sourceNodes.push(source);
+                soundtouchNodes.push({ filter: filter, st: st, node: node });
                 gainNodes.push(gain);
             });
 
-            startTime = audioCtx.currentTime - pauseOffset;
             isPlaying = true;
             document.getElementById('btn-play-master').innerText = "⏸ PAUSE";
-            document.getElementById('status-text').innerText = `🔁 Reproduzindo em Loop (${Math.round(currentPlaybackRate * 100)}% BPM)...`;
+            document.getElementById('status-text').innerText = `🔁 Reproduzindo em Loop (${Math.round(currentTempo * 100)}% BPM - Tom Original)...`;
         }
 
         function pauseAll() {
             if (!isPlaying) return;
-            pauseOffset = audioCtx.currentTime - startTime;
-            sourceNodes.forEach(source => source.stop());
+            soundtouchNodes.forEach(item => {
+                if (item.node) item.node.disconnect();
+            });
             isPlaying = false;
             document.getElementById('btn-play-master').innerText = "▶ PLAY";
             document.getElementById('status-text').innerText = "⏸ Pausado.";
         }
 
         function stopAll() {
-            if (sourceNodes.length > 0) {
-                sourceNodes.forEach(source => { try { source.stop(); } catch(e){} });
-            }
-            isPlaying = false; pauseOffset = 0;
+            soundtouchNodes.forEach(item => {
+                if (item.node) item.node.disconnect();
+            });
+            isPlaying = false;
             const btnPlay = document.getElementById('btn-play-master');
             if (btnPlay) btnPlay.innerText = "▶ PLAY";
             const statusText = document.getElementById('status-text');
             if (statusText && isLoaded) statusText.innerText = "⏹ Parado.";
         }
 
+        // ⏱️ Ajusta o tempo sem alterar a afinação/pitch
         function alterarVelocidade(val) {
-            currentPlaybackRate = parseFloat(val);
-            document.getElementById('bpm-val').innerText = `${Math.round(currentPlaybackRate * 100)}%`;
+            currentTempo = parseFloat(val);
+            document.getElementById('bpm-val').innerText = `${Math.round(currentTempo * 100)}%`;
             
-            sourceNodes.forEach(source => {
-                if (source) {
-                    source.playbackRate.value = currentPlaybackRate;
+            soundtouchNodes.forEach(item => {
+                if (item.st) {
+                    item.st.tempo = currentTempo;
                 }
             });
 
             if (isPlaying) {
-                document.getElementById('status-text').innerText = `🔁 Reproduzindo em Loop (${Math.round(currentPlaybackRate * 100)}% BPM)...`;
+                document.getElementById('status-text').innerText = `🔁 Reproduzindo em Loop (${Math.round(currentTempo * 100)}% BPM - Tom Original)...`;
             }
         }
 
