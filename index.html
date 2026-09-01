@@ -1,527 +1,325 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BTK - Percussão</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent-color: #ff9800;
+            --text-color: #ffffff;
+            --subtext-color: #b0b0b0;
+            --error-color: #f44336;
+            --success-color: #4caf50;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #121212; color: #ffffff; padding: 15px;
-            display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
         }
-        .multitrack-container {
-            background: #1e1e1e; padding: 20px; border-radius: 16px;
-            width: 100%; max-width: 720px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
-        
-        .header-title {
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 12px;
         }
-        h2 { font-size: 1.3em; }
-        .device-badge {
-            font-size: 0.7em; background: rgba(0, 188, 212, 0.2); color: #00bcd4;
-            padding: 4px 8px; border-radius: 12px; border: 1px solid #00bcd4;
+
+        .header h2 { margin: 0; font-size: 1.3rem; }
+
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: #333;
+            color: var(--subtext-color);
         }
-        
-        .select-box {
-            margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px;
-        }
-        .select-box label { font-size: 0.8em; color: #aaa; font-weight: bold; text-transform: uppercase; }
+
+        .status-badge.online { background: rgba(76, 175, 80, 0.2); color: var(--success-color); }
+        .status-badge.offline { background: rgba(244, 67, 54, 0.2); color: var(--error-color); }
+
         select {
-            padding: 14px; border-radius: 10px; background: #2a2a2a; color: #fff;
-            border: 1px solid rgba(255,255,255,0.2); font-size: 1em; cursor: pointer; outline: none;
+            width: 100%;
+            padding: 16px;
+            font-size: 1rem;
+            background: #2a2a2a;
+            color: var(--text-color);
+            border: 2px solid #444;
+            border-radius: 12px;
+            outline: none;
+            cursor: pointer;
         }
 
-        /* Visor do Cronômetro */
-        .timer-display {
-            background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(0, 188, 212, 0.3);
-            border-radius: 10px; padding: 10px; text-align: center; margin-bottom: 15px;
-        }
-        .timer-label { font-size: 0.7em; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
-        .timer-digits { font-family: monospace; font-size: 2.2em; font-weight: bold; color: #00bcd4; }
+        select:focus { border-color: var(--accent-color); }
 
-        .bpm-container {
-            background: rgba(0, 188, 212, 0.05); padding: 14px; border-radius: 10px;
-            border: 1px solid rgba(0, 188, 212, 0.2); margin-bottom: 15px;
-            display: flex; flex-direction: column; gap: 8px;
-        }
-        .bpm-header {
-            display: flex; justify-content: space-between; font-size: 0.85em; font-weight: bold; color: #00bcd4;
+        .timer-box {
+            text-align: center;
+            background: #181818;
+            padding: 16px;
+            border-radius: 12px;
         }
 
-        /* Controles Principais */
-        .master-controls {
-            display: flex; flex-direction: column; gap: 10px;
-            background: rgba(255, 255, 255, 0.04); padding: 14px; border-radius: 12px;
-            margin-bottom: 15px;
-        }
-        .master-buttons { display: flex; gap: 10px; width: 100%; }
-        .btn-master {
-            flex: 1; padding: 14px; border: none; border-radius: 10px; font-weight: bold;
-            cursor: pointer; font-size: 0.95em; text-transform: uppercase; text-align: center;
-        }
-        .btn-play { background: #28a745; color: #ffffff; }
-        .btn-play:disabled { background: #444444; color: #888888; cursor: not-allowed; }
-        .btn-stop { background: #dc3545; color: #ffffff; }
-        .btn-cache {
-            background: rgba(255, 255, 255, 0.08); color: #ccc; border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 10px; border-radius: 8px; cursor: pointer; font-size: 0.8em; text-align: center;
+        .timer-label { font-size: 0.85rem; color: var(--subtext-color); margin-bottom: 4px; }
+        .timer-display { font-size: 2.5rem; font-weight: bold; font-family: monospace; color: var(--accent-color); }
+
+        .speed-control {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .status-box {
-            font-size: 0.8em; color: #00bcd4; margin-bottom: 15px; padding: 10px;
-            background: rgba(0, 188, 212, 0.1); border-radius: 6px; border-left: 4px solid #00bcd4;
+        .speed-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: bold;
         }
 
-        .track-list { display: flex; flex-direction: column; gap: 10px; }
-        
-        /* Layout Desktop (Padrão) */
-        .track-row {
-            display: grid; grid-template-columns: 140px 75px 1fr; align-items: center;
-            gap: 12px; background: rgba(255, 255, 255, 0.03); padding: 12px;
-            border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .track-name { font-weight: 600; font-size: 0.9em; color: #ffeb3b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        
-        /* NOVO: Estilo visual tipo Toggle Switch (Botão Rádio/Interruptor) */
-        .mute-switch {
-            position: relative; width: 70px; height: 32px;
-            background: rgba(40, 167, 69, 0.15); border: 1px solid #28a745;
-            border-radius: 20px; cursor: pointer; display: flex; align-items: center;
-            transition: all 0.3s ease;
-        }
-        .mute-circle {
-            position: absolute; left: 4px; width: 22px; height: 22px;
-            background: #28a745; border-radius: 50%;
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-        }
-        .mute-label {
-            width: 100%; text-align: right; font-size: 0.7em; font-weight: bold;
-            color: #28a745; padding-right: 10px; transition: all 0.3s ease;
-        }
-        
-        /* Estado Mutado (OFF) */
-        .mute-switch.is-muted {
-            background: rgba(220, 53, 69, 0.15); border-color: #dc3545;
-        }
-        .mute-switch.is-muted .mute-circle {
-            left: calc(100% - 26px); background: #dc3545;
-        }
-        .mute-switch.is-muted .mute-label {
-            text-align: left; color: #dc3545; padding-right: 0; padding-left: 10px;
+        input[type="range"] {
+            width: 100%;
+            height: 12px;
+            border-radius: 6px;
+            accent-color: var(--accent-color);
+            cursor: pointer;
         }
 
-        input[type=range] {
-            width: 100%; accent-color: #00bcd4; cursor: pointer; height: 24px;
+        .player-controls {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 12px;
         }
 
-        /* 📱 REGRAS EXCLUSIVAS PARA SMARTPHONES */
-        @media (max-width: 768px) {
-            body { padding: 8px; }
-            .multitrack-container { padding: 14px; }
-            .timer-digits { font-size: 1.8em; }
-            
-            .track-row {
-                grid-template-columns: 1fr auto;
-                grid-template-areas: 
-                    "name mute"
-                    "slider slider";
-                gap: 8px; padding: 10px 12px;
-            }
-            .track-name { grid-area: name; font-size: 0.95em; }
-            .mute-switch { grid-area: mute; }
-            input[type=range] { grid-area: slider; margin-top: 4px; height: 32px; }
+        button {
+            padding: 18px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        button:active:not(:disabled) { opacity: 0.8; }
+
+        .btn-play { background: var(--accent-color); color: #000; }
+        .btn-stop { background: #333; color: var(--text-color); }
+
+        .toast {
+            font-size: 0.85rem;
+            text-align: center;
+            color: var(--subtext-color);
+            min-height: 20px;
         }
     </style>
 </head>
 <body>
 
-    <div class="multitrack-container">
-        <div class="header-title">
-            <h2>🎛️ BTK - Percussão</h2>
-            <span class="device-badge" id="device-tag">Detectando...</span>
-        </div>
-
-        <div class="select-box">
-            <label for="song-select">SELECIONAR RITMO:</label>
-            <select id="song-select" onchange="trocarMusica(this.value)">
-                <option value="">Carregando lista...</option>
-            </select>
-        </div>
-
-        <div class="timer-display">
-            <div class="timer-label">⏱️ Tempo Decorrido (Contínuo)</div>
-            <div class="timer-digits" id="timer-text">00:00.0</div>
-        </div>
-
-        <div class="bpm-container">
-            <div class="bpm-header">
-                <span>⏱️ VELOCIDADE (BPM)</span>
-                <span id="bpm-val">100%</span>
-            </div>
-            <input type="range" id="bpm-range" min="0.5" max="1.5" step="0.05" value="1" oninput="alterarVelocidade(this.value)">
-        </div>
-
-        <div class="master-controls">
-            <div class="master-buttons">
-                <button id="btn-play-master" class="btn-master btn-play" onclick="togglePlay()" disabled>Aguardando Ritmo...</button>
-                <button class="btn-master btn-stop" onclick="stopAll()">■ Stop</button>
-            </div>
-            <button class="btn-cache" onclick="limparCache()">🗑️ Limpar Memória Local</button>
-        </div>
-
-        <div class="status-box" id="status-text">Conectando à planilha...</div>
-
-        <div class="track-list" id="track-container"></div>
+<div class="container">
+    <div class="header">
+        <h2>🎛️ BTK - Percussão</h2>
+        <span id="status" class="status-badge">Detectando...</span>
     </div>
 
-    <script>
-        const CACHE_NAME = 'multitrack-sheet-audio-v9';
-        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv";
+    <div>
+        <select id="trackSelect" disabled>
+            <option>Carregando lista...</option>
+        </select>
+    </div>
 
-        let dadosPlanilha = [];
-        let nomesCanais = [];
-        let audioUrlsAtuais = [];
-        let audioCtx;
-        let audioBuffers = [];
-        let sourceNodes = [];
-        let gainNodes = [];
-        let muteStates = [];
-        let currentPlaybackRate = 1.0;
+    <div class="timer-box">
+        <div class="timer-label">⏱️ TEMPO DECORRIDO</div>
+        <div id="timerDisplay" class="timer-display">00:00.0</div>
+    </div>
 
-        let isPlaying = false;
-        let isLoaded = false;
-        let startTime = 0;
-        let pauseOffset = 0;
+    <div class="speed-control">
+        <div class="speed-header">
+            <span>⏱️ VELOCIDADE (BPM)</span>
+            <span id="speedDisplay">100%</span>
+        </div>
+        <input type="range" id="speedSlider" min="50" max="150" value="100" step="5">
+    </div>
 
-        let elapsedTime = 0;
-        let timerInterval = null;
-        let lastTimestamp = 0;
+    <div class="player-controls">
+        <button id="btnPlay" class="btn-play" disabled>PLAY</button>
+        <button id="btnStop" class="btn-stop" disabled>STOP</button>
+    </div>
 
-        function detectarDispositivo() {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
-            const badge = document.getElementById('device-tag');
-            badge.innerText = isMobile ? "📱 CELULAR" : "💻 PC / DESKTOP";
-        }
+    <div id="toastMessage" class="toast">Conectando à planilha...</div>
+</div>
 
-        function normalizarUrl(url) {
-            if (!url) return '';
-            let link = url.trim();
-            if (link.includes('dropbox.com')) {
-                return link.replace('www.dropbox.com', 'dl.dropboxusercontent.com')
-                           .replace('?dl=0', '').replace('&dl=0', '');
-            } else if (link.includes('drive.google.com') && link.includes('/d/')) {
-                const id = link.split('/d/')[1].split('/')[0];
-                return `https://drive.google.com/uc?export=download&id=${id}`;
-            }
-            return link;
-        }
+<audio id="audioPlayer" preload="auto"></audio>
 
-        function parseCSVLine(text) {
-            const result = [];
-            let cell = '';
-            let inQuotes = false;
-            for (let i = 0; i < text.length; i++) {
-                let c = text[i];
-                if (c === '"') { inQuotes = !inQuotes; }
-                else if (c === ',' && !inQuotes) {
-                    result.push(cell.trim());
-                    cell = '';
-                } else { cell += c; }
-            }
-            result.push(cell.trim());
-            return result;
-        }
+<script>
+    // Configurar a URL pública do CSV da sua planilha do Google Sheets
+    const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pubhtml';
 
-        async function carregarPlanilha() {
-            const statusText = document.getElementById('status-text');
-            try {
-                const res = await fetch(SHEET_CSV_URL);
-                if (!res.ok) throw new Error("Não foi possível carregar a planilha.");
-                
-                const csvText = await res.text();
-                const linhas = csvText.split('\n').filter(l => l.trim() !== '');
+    const trackSelect = document.getElementById('trackSelect');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedDisplay = document.getElementById('speedDisplay');
+    const btnPlay = document.getElementById('btnPlay');
+    const btnStop = document.getElementById('btnStop');
+    const statusBadge = document.getElementById('status');
+    const toastMessage = document.getElementById('toastMessage');
+    const audio = document.getElementById('audioPlayer');
 
-                if (linhas.length < 2) {
-                    throw new Error("A planilha precisa ter um cabeçalho e pelo menos 1 linha de dados.");
-                }
+    let tracks = [];
 
-                const cabecalho = parseCSVLine(linhas[0]);
-                nomesCanais = cabecalho.slice(1);
+    // Mantém a afinação original ao alterar o andamento/BPM
+    function applyPitchPreservation() {
+        audio.preservesPitch = true;
+        audio.webkitPreservesPitch = true;
+        audio.mozPreservesPitch = true;
+    }
 
-                dadosPlanilha = linhas.slice(1).map(linha => {
-                    const colunas = parseCSVLine(linha);
-                    return {
-                        nomeMusica: colunas[0],
-                        urls: colunas.slice(1)
-                    };
-                }).filter(d => d.nomeMusica && d.urls.length > 0);
+    async function init() {
+        applyPitchPreservation();
+        await loadTracks();
+    }
 
-                preencherSelect();
-                statusText.innerText = "📋 Selecione um ritmo no menu acima para carregar as pistas.";
-
-            } catch (err) {
-                console.error(err);
-                statusText.innerText = "⚠️ Erro ao carregar planilha. Verifique se ela está publicada como CSV.";
-            }
-        }
-
-        function preencherSelect() {
-            const select = document.getElementById('song-select');
-            select.innerHTML = '<option value="">-- SELECIONE UM RITMO --</option>';
-            dadosPlanilha.forEach((item, idx) => {
-                const opt = document.createElement('option');
-                opt.value = idx;
-                opt.innerText = item.nomeMusica;
-                select.appendChild(opt);
-            });
-        }
-
-        async function trocarMusica(index) {
-            stopAll();
-            isLoaded = false;
-            const btnPlay = document.getElementById('btn-play-master');
-
-            if (index === "" || index === null || index === undefined) {
-                document.getElementById('track-container').innerHTML = '';
-                btnPlay.disabled = true;
-                btnPlay.innerText = "Aguardando Ritmo...";
-                document.getElementById('status-text').innerText = "📋 Selecione um ritmo no menu acima para carregar as pistas.";
-                return;
-            }
-
-            btnPlay.disabled = true;
-            btnPlay.innerText = "Carregando...";
-
-            const musicaSelecionada = dadosPlanilha[index];
-            audioUrlsAtuais = musicaSelecionada.urls.map((url, i) => ({
-                name: nomesCanais[i] || `Pista ${i+1}`,
-                url: url
-            })).filter(track => track.url && track.url.length > 5);
-
-            muteStates = new Array(audioUrlsAtuais.length).fill(false);
-            renderTracks();
-            await loadAllTracksWithCache();
-        }
-
-        function renderTracks() {
-            const container = document.getElementById('track-container');
-            container.innerHTML = '';
-
-            audioUrlsAtuais.forEach((track, index) => {
-                container.innerHTML += `
-                    <div class="track-row">
-                        <span class="track-name" title="${track.name}">${track.name}</span>
-                        
-                        <!-- Novo Switch de Mute visual -->
-                        <div class="mute-switch" id="mute-switch-${index}" onclick="toggleTrackMute(${index})">
-                            <div class="mute-circle"></div>
-                            <span class="mute-label" id="mute-label-${index}">ON</span>
-                        </div>
-
-                        <input type="range" id="vol-${index}" min="0" max="1" step="0.01" value="1" oninput="changeVolume(${index}, this.value)">
-                    </div>
-                `;
-            });
-        }
-
-        async function loadAllTracksWithCache() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            const statusText = document.getElementById('status-text');
-
-            try {
-                const cache = await caches.open(CACHE_NAME);
-
-                const promises = audioUrlsAtuais.map(async (item, index) => {
-                    const finalUrl = normalizarUrl(item.url);
-                    statusText.innerText = `Verificando memória da pista ${index + 1} de ${audioUrlsAtuais.length}...`;
-
-                    let response = await cache.match(finalUrl);
-
-                    if (!response) {
-                        statusText.innerText = `Baixando faixa (${index + 1}/${audioUrlsAtuais.length}): ${item.name}...`;
-                        const req = new Request(finalUrl, { mode: 'cors' });
-                        response = await fetch(req);
-                        
-                        if (!response.ok) throw new Error(`Não foi possível baixar a pista: ${item.name}`);
-                        await cache.put(req, response.clone());
-                    }
-
-                    const arrayBuffer = await response.arrayBuffer();
-                    return await audioCtx.decodeAudioData(arrayBuffer);
-                });
-
-                audioBuffers = await Promise.all(promises);
-                isLoaded = true;
-
-                statusText.innerText = "✅ Ritmo carregado e pronto para tocar!";
-                const btnPlay = document.getElementById('btn-play-master');
-                btnPlay.innerText = "▶ PLAY";
-                btnPlay.disabled = false;
-
-            } catch (err) {
-                console.error("Erro no carregamento:", err);
-                statusText.innerText = "⚠️ Erro ao carregar mídias da música selecionada.";
-            }
-        }
-
-        function togglePlay() {
-            if (!isLoaded) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            if (isPlaying) { pauseAll(); } else { playAll(); }
-        }
-
-        function playAll() {
-            sourceNodes = []; gainNodes = [];
-            const now = audioCtx.currentTime;
-
-            audioBuffers.forEach((buffer, index) => {
-                const source = audioCtx.createBufferSource();
-                source.buffer = buffer;
-                source.loop = true;
-                source.playbackRate.value = currentPlaybackRate;
-
-                const gain = audioCtx.createGain();
-                const volSlider = document.getElementById(`vol-${index}`).value;
-                gain.gain.value = muteStates[index] ? 0 : volSlider;
-
-                source.connect(gain);
-                gain.connect(audioCtx.destination);
-                source.start(now, pauseOffset % buffer.duration);
-
-                sourceNodes.push(source);
-                gainNodes.push(gain);
-            });
-
-            startTime = audioCtx.currentTime - pauseOffset;
-            isPlaying = true;
-            document.getElementById('btn-play-master').innerText = "⏸ PAUSE";
-            document.getElementById('status-text').innerText = `🔁 Reproduzindo em Loop (${Math.round(currentPlaybackRate * 100)}% BPM)...`;
-
-            startTimer();
-        }
-
-        function pauseAll() {
-            if (!isPlaying) return;
-            pauseOffset = audioCtx.currentTime - startTime;
-            sourceNodes.forEach(source => {
-                try { source.stop(); } catch(e){}
-            });
-            isPlaying = false;
-            document.getElementById('btn-play-master').innerText = "▶ PLAY";
-            document.getElementById('status-text').innerText = "⏸ Pausado.";
-
-            stopTimer();
-        }
-
-        function stopAll() {
-            if (sourceNodes.length > 0) {
-                sourceNodes.forEach(source => { try { source.stop(); } catch(e){} });
-            }
-            isPlaying = false; pauseOffset = 0;
-            const btnPlay = document.getElementById('btn-play-master');
-            if (btnPlay) {
-                btnPlay.innerText = isLoaded ? "▶ PLAY" : "Aguardando Ritmo...";
-            }
-            const statusText = document.getElementById('status-text');
-            if (statusText && isLoaded) statusText.innerText = "⏹ Parado.";
-
-            resetTimer();
-        }
-
-        function startTimer() {
-            lastTimestamp = performance.now();
-            if (timerInterval) clearInterval(timerInterval);
+    async function loadTracks() {
+        try {
+            updateStatus('Buscando...', 'offline');
+            const response = await fetch(GOOGLE_SHEET_CSV_URL);
             
-            timerInterval = setInterval(() => {
-                const now = performance.now();
-                const delta = now - lastTimestamp;
-                lastTimestamp = now;
-                elapsedTime += delta;
-                renderTimer();
-            }, 100);
-        }
-
-        function stopTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = null;
-        }
-
-        function resetTimer() {
-            stopTimer();
-            elapsedTime = 0;
-            renderTimer();
-        }
-
-        function renderTimer() {
-            const totalMs = Math.floor(elapsedTime);
-            const ms = Math.floor((totalMs % 1000) / 100);
-            const totalSec = Math.floor(totalMs / 1000);
-            const minutes = Math.floor(totalSec / 60);
-            const seconds = totalSec % 60;
-
-            const mStr = String(minutes).padStart(2, '0');
-            const sStr = String(seconds).padStart(2, '0');
-
-            document.getElementById('timer-text').innerText = `${mStr}:${sStr}.${ms}`;
-        }
-
-        function alterarVelocidade(val) {
-            currentPlaybackRate = parseFloat(val);
-            document.getElementById('bpm-val').innerText = `${Math.round(currentPlaybackRate * 100)}%`;
+            if (!response.ok) throw new Error('Falha de rede');
             
-            sourceNodes.forEach(source => {
-                if (source) {
-                    source.playbackRate.value = currentPlaybackRate;
-                }
-            });
+            const csvText = await response.text();
+            tracks = parseCSV(csvText);
 
-            if (isPlaying) {
-                document.getElementById('status-text').innerText = `🔁 Reproduzindo em Loop (${Math.round(currentPlaybackRate * 100)}% BPM)...`;
-            }
-        }
-
-        function changeVolume(index, value) {
-            if (gainNodes[index] && !muteStates[index]) { gainNodes[index].gain.value = value; }
-        }
-
-        function toggleTrackMute(index) {
-            muteStates[index] = !muteStates[index];
-            const switchBtn = document.getElementById(`mute-switch-${index}`);
-            const label = document.getElementById(`mute-label-${index}`);
-            const sliderVal = document.getElementById(`vol-${index}`).value;
-
-            // Se for mutado
-            if (muteStates[index]) {
-                switchBtn.classList.add('is-muted');
-                label.innerText = "OFF";
-                if (gainNodes[index]) gainNodes[index].gain.value = 0;
+            // Armazena no navegador para o caso de ficar sem internet
+            localStorage.setItem('btk_tracks_cache', JSON.stringify(tracks));
+            
+            updateStatus('Online', 'online');
+            toastMessage.textContent = 'Lista atualizada com sucesso!';
+            populateSelect(tracks);
+        } catch (error) {
+            console.warn('Erro ao conectar à planilha. Carregando dados locais...', error);
+            
+            const cachedTracks = localStorage.getItem('btk_tracks_cache');
+            if (cachedTracks) {
+                tracks = JSON.parse(cachedTracks);
+                updateStatus('Modo Offline', 'offline');
+                toastMessage.textContent = 'Sem conexão. Usando músicas salvas em cache.';
+                populateSelect(tracks);
             } else {
-                switchBtn.classList.remove('is-muted');
-                label.innerText = "ON";
-                if (gainNodes[index]) gainNodes[index].gain.value = sliderVal;
+                updateStatus('Erro', 'offline');
+                toastMessage.textContent = 'Não foi possível carregar as faixas (sem conexão e sem cache).';
             }
         }
+    }
 
-        async function limparCache() {
-            if (confirm("Deseja apagar os áudios salvos na memória local do navegador?")) {
-                await caches.delete(CACHE_NAME);
-                alert("Memória limpa com sucesso!");
-                location.reload();
+    function parseCSV(text) {
+        const lines = text.split('\n');
+        const parsed = [];
+        lines.forEach(line => {
+            const parts = line.split(',');
+            if (parts.length >= 2) {
+                const name = parts[0].replace(/"/g, '').trim();
+                const url = parts[1].replace(/"/g, '').trim();
+                if (name && url && !name.toLowerCase().includes('nome')) {
+                    parsed.push({ name, url });
+                }
             }
-        }
-
-        window.addEventListener('resize', detectarDispositivo);
-        window.addEventListener('load', () => {
-            detectarDispositivo();
-            carregarPlanilha();
         });
-    </script>
+        return parsed;
+    }
+
+    function populateSelect(trackList) {
+        trackSelect.innerHTML = '<option value="">-- Selecione uma música --</option>';
+        trackList.forEach((t, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.textContent = t.name;
+            trackSelect.appendChild(opt);
+        });
+        trackSelect.disabled = false;
+    }
+
+    trackSelect.addEventListener('change', (e) => {
+        const index = e.target.value;
+        if (index !== '') {
+            audio.src = tracks[index].url;
+            btnPlay.disabled = false;
+            btnStop.disabled = false;
+            toastMessage.textContent = `Carregado: ${tracks[index].name}`;
+        } else {
+            btnPlay.disabled = true;
+            btnStop.disabled = true;
+        }
+    });
+
+    speedSlider.addEventListener('input', (e) => {
+        const val = e.target.value;
+        speedDisplay.textContent = `${val}%`;
+        audio.playbackRate = val / 100;
+        applyPitchPreservation();
+    });
+
+    btnPlay.addEventListener('click', () => {
+        if (audio.paused) {
+            audio.play().then(() => {
+                btnPlay.textContent = 'PAUSE';
+            }).catch(() => {
+                toastMessage.textContent = 'Erro ao tocar. Verifique se o link do áudio é válido.';
+            });
+        } else {
+            audio.pause();
+            btnPlay.textContent = 'PLAY';
+        }
+    });
+
+    btnStop.addEventListener('click', () => {
+        audio.pause();
+        audio.currentTime = 0;
+        btnPlay.textContent = 'PLAY';
+    });
+
+    audio.addEventListener('timeupdate', () => {
+        const current = audio.currentTime;
+        const mins = Math.floor(current / 60).toString().padStart(2, '0');
+        const secs = Math.floor(current % 60).toString().padStart(2, '0');
+        const ms = Math.floor((current % 1) * 10);
+        timerDisplay.textContent = `${mins}:${secs}.${ms}`;
+    });
+
+    audio.addEventListener('ended', () => {
+        btnPlay.textContent = 'PLAY';
+        audio.currentTime = 0;
+    });
+
+    audio.addEventListener('error', () => {
+        toastMessage.textContent = 'Erro no áudio. O link pode ter mudado ou expirado.';
+        btnPlay.textContent = 'PLAY';
+    });
+
+    function updateStatus(text, type) {
+        statusBadge.textContent = text;
+        statusBadge.className = `status-badge ${type}`;
+    }
+
+    init();
+</script>
 </body>
 </html>
