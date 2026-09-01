@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Player Multitrack (Planilha com Múltiplas Músicas)</title>
+    <title>BTK - Percussão</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -19,12 +19,21 @@
         h2 { font-size: 1.4em; margin-bottom: 15px; }
         
         .select-box {
-            margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px;
+            margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;
         }
-        .select-box label { font-size: 0.9em; color: #aaa; font-weight: bold; }
+        .select-box label { font-size: 0.85em; color: #aaa; font-weight: bold; text-transform: uppercase; }
         select {
             padding: 12px; border-radius: 8px; background: #2a2a2a; color: #fff;
             border: 1px solid rgba(255,255,255,0.2); font-size: 1em; cursor: pointer;
+        }
+
+        .bpm-container {
+            background: rgba(0, 188, 212, 0.05); padding: 14px; border-radius: 8px;
+            border: 1px solid rgba(0, 188, 212, 0.2); margin-bottom: 20px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .bpm-header {
+            display: flex; justify-content: space-between; font-size: 0.9em; font-weight: bold; color: #00bcd4;
         }
 
         .master-controls {
@@ -68,13 +77,21 @@
 <body>
 
     <div class="multitrack-container">
-        <h2>🎛️ BTK - Percussão (conectar no Google)</h2>
+        <h2>🎛️ BTK - Percussão (conectar com o Google)</h2>
 
         <div class="select-box">
             <label for="song-select">SELECIONAR RITMO:</label>
             <select id="song-select" onchange="trocarMusica(this.value)">
-                <option value="">Carregando lista...</option>
+                <option value="">Carregando opções...</option>
             </select>
+        </div>
+
+        <div class="bpm-container">
+            <div class="bpm-header">
+                <span>⏱️ VELOCIDADE (BPM)</span>
+                <span id="bpm-val">100%</span>
+            </div>
+            <input type="range" id="bpm-range" min="0.5" max="1.5" step="0.05" value="1" oninput="alterarVelocidade(this.value)">
         </div>
 
         <div class="master-controls">
@@ -91,7 +108,7 @@
     </div>
 
     <script>
-        const CACHE_NAME = 'multitrack-sheet-audio-v2';
+        const CACHE_NAME = 'multitrack-sheet-audio-v3';
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv";
 
         let dadosPlanilha = [];
@@ -102,6 +119,7 @@
         let sourceNodes = [];
         let gainNodes = [];
         let muteStates = [];
+        let currentPlaybackRate = 1.0;
 
         let isPlaying = false;
         let isLoaded = false;
@@ -121,7 +139,6 @@
             return link;
         }
 
-        // Divide o CSV lidando com aspas ou vírgulas internas
         function parseCSVLine(text) {
             const result = [];
             let cell = '';
@@ -142,7 +159,7 @@
             const statusText = document.getElementById('status-text');
             try {
                 const res = await fetch(SHEET_CSV_URL);
-                if (!res.ok) throw new Error("Não foi possível acessar a planilha.");
+                if (!res.ok) throw new Error("Não foi possível carregar a planilha.");
                 
                 const csvText = await res.text();
                 const linhas = csvText.split('\n').filter(l => l.trim() !== '');
@@ -151,11 +168,9 @@
                     throw new Error("A planilha precisa ter um cabeçalho e pelo menos 1 linha de dados.");
                 }
 
-                // Linha 0: Cabeçalho (Coluna A = Nome da música, Colunas B.. = Nomes das Pistas)
                 const cabecalho = parseCSVLine(linhas[0]);
                 nomesCanais = cabecalho.slice(1);
 
-                // Linhas seguintes: Dados das Músicas e Links
                 dadosPlanilha = linhas.slice(1).map(linha => {
                     const colunas = parseCSVLine(linha);
                     return {
@@ -171,7 +186,7 @@
 
             } catch (err) {
                 console.error(err);
-                statusText.innerText = "⚠️ Erro ao carregar planilha. Verifique as permissões do CSV publicado.";
+                statusText.innerText = "⚠️ Erro ao carregar planilha. Verifique se ela está publicada como CSV.";
             }
         }
 
@@ -252,7 +267,7 @@
                 audioBuffers = await Promise.all(promises);
                 isLoaded = true;
 
-                statusText.innerText = "✅ Pistas sincronizadas e salvas no dispositivo! Pronto para tocar em Loop.";
+                statusText.innerText = "✅ Pistas sincronizadas e salvas no dispositivo! Pronto para tocar.";
                 const btnPlay = document.getElementById('btn-play-master');
                 btnPlay.innerText = "▶ PLAY";
                 btnPlay.disabled = false;
@@ -276,7 +291,8 @@
             audioBuffers.forEach((buffer, index) => {
                 const source = audioCtx.createBufferSource();
                 source.buffer = buffer;
-                source.loop = true; // 🔁 Loop Infinito
+                source.loop = true;
+                source.playbackRate.value = currentPlaybackRate;
 
                 const gain = audioCtx.createGain();
                 const volSlider = document.getElementById(`vol-${index}`).value;
@@ -293,7 +309,7 @@
             startTime = audioCtx.currentTime - pauseOffset;
             isPlaying = true;
             document.getElementById('btn-play-master').innerText = "⏸ PAUSE";
-            document.getElementById('status-text').innerText = "🔁 Reproduzindo em Loop...";
+            document.getElementById('status-text').innerText = `🔁 Reproduzindo em Loop (${Math.round(currentPlaybackRate * 100)}% BPM)...`;
         }
 
         function pauseAll() {
@@ -314,6 +330,21 @@
             if (btnPlay) btnPlay.innerText = "▶ PLAY";
             const statusText = document.getElementById('status-text');
             if (statusText && isLoaded) statusText.innerText = "⏹ Parado.";
+        }
+
+        function alterarVelocidade(val) {
+            currentPlaybackRate = parseFloat(val);
+            document.getElementById('bpm-val').innerText = `${Math.round(currentPlaybackRate * 100)}%`;
+            
+            sourceNodes.forEach(source => {
+                if (source) {
+                    source.playbackRate.value = currentPlaybackRate;
+                }
+            });
+
+            if (isPlaying) {
+                document.getElementById('status-text').innerText = `🔁 Reproduzindo em Loop (${Math.round(currentPlaybackRate * 100)}% BPM)...`;
+            }
         }
 
         function changeVolume(index, value) {
