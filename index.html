@@ -77,12 +77,12 @@
 <body>
 
     <div class="multitrack-container">
-        <h2>🎛️ BTK - Percussão 3 (conectar com o Google)</h2>
+        <h2>🎛️ BTK - Percussão (conectar com o Google)</h2>
 
         <div class="select-box">
             <label for="song-select">SELECIONAR RITMO:</label>
             <select id="song-select" onchange="trocarMusica(this.value)">
-                <option value="">Carregando opções...</option>
+                <option value="">Carregando lista...</option>
             </select>
         </div>
 
@@ -96,7 +96,7 @@
 
         <div class="master-controls">
             <div class="master-buttons">
-                <button id="btn-play-master" class="btn-master btn-play" onclick="togglePlay()" disabled>Carregando...</button>
+                <button id="btn-play-master" class="btn-master btn-play" onclick="togglePlay()" disabled>Aguardando Ritmo...</button>
                 <button class="btn-master btn-stop" onclick="stopAll()">■ Stop</button>
             </div>
             <button class="btn-cache" onclick="limparCache()">🗑️ Limpar Memória Local</button>
@@ -180,9 +180,8 @@
                 }).filter(d => d.nomeMusica && d.urls.length > 0);
 
                 preencherSelect();
-                if (dadosPlanilha.length > 0) {
-                    trocarMusica(0);
-                }
+                // 💡 Não escolhe a primeira música automaticamente. Aguarda a seleção manual do usuário.
+                statusText.innerText = "📋 Selecione um ritmo no menu acima para carregar as pistas.";
 
             } catch (err) {
                 console.error(err);
@@ -192,7 +191,7 @@
 
         function preencherSelect() {
             const select = document.getElementById('song-select');
-            select.innerHTML = '';
+            select.innerHTML = '<option value="">-- SELECIONE UM RITMO --</option>';
             dadosPlanilha.forEach((item, idx) => {
                 const opt = document.createElement('option');
                 opt.value = idx;
@@ -205,6 +204,16 @@
             stopAll();
             isLoaded = false;
             const btnPlay = document.getElementById('btn-play-master');
+
+            // Se o usuário selecionar a opção padrão "-- SELECIONE UM RITMO --"
+            if (index === "" || index === null || index === undefined) {
+                document.getElementById('track-container').innerHTML = '';
+                btnPlay.disabled = true;
+                btnPlay.innerText = "Aguardando Ritmo...";
+                document.getElementById('status-text').innerText = "📋 Selecione um ritmo no menu acima para carregar as pistas.";
+                return;
+            }
+
             btnPlay.disabled = true;
             btnPlay.innerText = "Carregando...";
 
@@ -247,7 +256,7 @@
 
                 const promises = audioUrlsAtuais.map(async (item, index) => {
                     const finalUrl = normalizarUrl(item.url);
-                    statusText.innerText = `Verificando cache da pista ${index + 1} de ${audioUrlsAtuais.length}...`;
+                    statusText.innerText = `Verificando memória da pista ${index + 1} de ${audioUrlsAtuais.length}...`;
 
                     let response = await cache.match(finalUrl);
 
@@ -267,7 +276,7 @@
                 audioBuffers = await Promise.all(promises);
                 isLoaded = true;
 
-                statusText.innerText = "✅ Pistas sincronizadas e salvas no dispositivo! Pronto para tocar.";
+                statusText.innerText = "✅ Ritmo carregado e pronto para tocar!";
                 const btnPlay = document.getElementById('btn-play-master');
                 btnPlay.innerText = "▶ PLAY";
                 btnPlay.disabled = false;
@@ -292,8 +301,6 @@
                 const source = audioCtx.createBufferSource();
                 source.buffer = buffer;
                 source.loop = true;
-                
-                // Ajusta velocidade de reprodução
                 source.playbackRate.value = currentPlaybackRate;
 
                 const gain = audioCtx.createGain();
@@ -331,7 +338,9 @@
             }
             isPlaying = false; pauseOffset = 0;
             const btnPlay = document.getElementById('btn-play-master');
-            if (btnPlay) btnPlay.innerText = "▶ PLAY";
+            if (btnPlay) {
+                btnPlay.innerText = isLoaded ? "▶ PLAY" : "Aguardando Ritmo...";
+            }
             const statusText = document.getElementById('status-text');
             if (statusText && isLoaded) statusText.innerText = "⏹ Parado.";
         }
