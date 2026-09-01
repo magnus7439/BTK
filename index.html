@@ -220,7 +220,7 @@
 
 <script>
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
-    const CACHE_NAME = 'btk-audio-cache-v1';
+    const CACHE_NAME = 'btk-audio-cache-v2';
 
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
@@ -233,7 +233,6 @@
     const statusBadge = document.getElementById('status');
     const toastMessage = document.getElementById('toastMessage');
 
-    // Web Audio API
     let audioCtx = null;
     let songsData = [];
     let loadedBuffers = [];
@@ -245,13 +244,16 @@
     let pauseOffset = 0;
     let timerInterval = null;
 
+    // Converte o link do Dropbox para o servidor de arquivos direto (resolve bloqueio CORS)
     function fixDropboxUrl(url) {
         if (!url) return '';
         url = url.trim();
         if (url.includes('dropbox.com')) {
-            if (url.includes('dl=0')) return url.replace('dl=0', 'raw=1');
-            if (!url.includes('raw=1') && !url.includes('dl=1')) {
-                return url + (url.includes('?') ? '&' : '?') + 'raw=1';
+            url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+            if (url.includes('dl=0')) {
+                url = url.replace('dl=0', 'raw=1');
+            } else if (!url.includes('raw=1') && !url.includes('dl=1')) {
+                url += (url.includes('?') ? '&' : '?') + 'raw=1';
             }
         }
         return url;
@@ -340,17 +342,17 @@
         trackSelect.disabled = false;
     }
 
-    // Busca áudio com suporte a Cache do Navegador (Cache API)
     async function fetchAudioWithCache(url) {
         const cache = await caches.open(CACHE_NAME);
         let response = await cache.match(url);
 
         if (!response) {
             toastMessage.textContent = 'Baixando áudio para o cache...';
-            response = await fetch(url);
-            if (response.ok) {
-                cache.put(url, response.clone());
+            response = await fetch(url, { mode: 'cors' });
+            if (!response.ok) {
+                throw new Error(`Erro ao carregar arquivo (HTTP ${response.status})`);
             }
+            cache.put(url, response.clone());
         } else {
             toastMessage.textContent = 'Carregando do cache local...';
         }
@@ -358,7 +360,6 @@
         return await response.arrayBuffer();
     }
 
-    // Seleção de música: baixa/carrega os áudios e armazena em memória (Web Audio API)
     trackSelect.addEventListener('change', async (e) => {
         stopAll();
         const index = e.target.value;
@@ -389,12 +390,10 @@
                 
                 loadedBuffers.push(audioBuffer);
 
-                // Criar nó de ganho (para Mute/Unmute)
                 const gainNode = audioCtx.createGain();
                 gainNode.connect(audioCtx.destination);
                 gainNodes.push(gainNode);
 
-                // Criar interface de controle
                 const row = document.createElement('div');
                 row.className = 'stem-row';
 
@@ -428,24 +427,23 @@
             toastMessage.textContent = `Pronto! ${selectedSong.name} sincronizado.`;
         } catch (err) {
             console.error(err);
-            toastMessage.textContent = 'Erro ao processar áudios.';
+            toastMessage.textContent = 'Erro ao processar áudios. Verifique as permissões dos links no Dropbox.';
         }
     });
 
-    // Disparo perfeitamente sincronizado por relógio da Web Audio API
     function playAll() {
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
 
         sourceNodes = [];
-        const playTime = audioCtx.currentTime + 0.05; // Pequeno offset para sincronia perfeita
+        const playTime = audioCtx.currentTime + 0.05;
         const currentRate = speedSlider.value / 100;
 
         loadedBuffers.forEach((buffer, index) => {
             const source = audioCtx.createBufferSource();
             source.buffer = buffer;
-            source.loop = true; // Loop Infinito sem falhas
+            source.loop = true;
             source.playbackRate.value = currentRate;
 
             source.connect(gainNodes[index]);
@@ -499,7 +497,6 @@
         });
     });
 
-    // Limpar o cache de áudios baixados
     btnClearCache.addEventListener('click', async () => {
         stopAll();
         const deleted = await caches.delete(CACHE_NAME);
