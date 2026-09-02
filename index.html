@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -19,7 +18,7 @@
 
         * {
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent; /* Remove destaque azul ao tocar no mobile */
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -44,13 +43,11 @@
             display: flex;
             flex-direction: column;
             gap: 18px;
+            position: relative;
         }
 
-        /* Otimização responsiva para celular: vira um App Fullscreen em telas pequenas */
         @media (max-width: 500px) {
-            body {
-                padding: 0;
-            }
+            body { padding: 0; }
             .container {
                 max-width: 100%;
                 min-height: 100vh;
@@ -58,6 +55,59 @@
                 box-shadow: none;
                 justify-content: space-between;
             }
+        }
+
+        .license-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(18, 18, 18, 0.96);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            text-align: center;
+            gap: 16px;
+        }
+
+        .license-overlay.hidden {
+            display: none;
+        }
+
+        .license-input {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1rem;
+            text-align: center;
+            letter-spacing: 2px;
+            background: #2a2a2a;
+            color: var(--text-color);
+            border: 2px solid #444;
+            border-radius: 12px;
+            outline: none;
+            text-transform: uppercase;
+        }
+
+        .license-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .btn-activate {
+            width: 100%;
+            background: var(--accent-color);
+            color: #000;
+            font-weight: bold;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
         }
 
         .header {
@@ -121,7 +171,7 @@
 
         input[type="range"] {
             width: 100%;
-            height: 16px; /* Aumentado para facilitar o toque no celular */
+            height: 16px;
             border-radius: 8px;
             accent-color: var(--accent-color);
             cursor: pointer;
@@ -135,7 +185,7 @@
         }
 
         button {
-            padding: 18px; /* Área de clique confortável para dedos */
+            padding: 18px;
             font-size: 1rem;
             font-weight: bold;
             border: none;
@@ -148,7 +198,6 @@
         button:disabled { opacity: 0.4; cursor: not-allowed; }
         button:active:not(:disabled) { transform: scale(0.98); }
 
-        /* Aplica efeito hover apenas em dispositivos com ponteiro de mouse */
         @media (hover: hover) {
             button:hover:not(:disabled) { filter: brightness(1.15); }
         }
@@ -208,6 +257,14 @@
 <body>
 
 <div class="container">
+    <div id="licenseOverlay" class="license-overlay">
+        <h2>🔑 Ativação BTK</h2>
+        <p style="color: var(--subtext-color); font-size: 0.9rem; margin: 0;">Insira sua chave de licença para liberar o aplicativo.</p>
+        <input type="text" id="licenseKeyInput" class="license-input" placeholder="XXXX-XXXX-XXXX" autocomplete="off">
+        <button id="btnActivate" class="btn-activate">ATIVAR LICENÇA</button>
+        <div id="licenseMessage" style="color: var(--error-color); font-size: 0.85rem; min-height: 18px;"></div>
+    </div>
+
     <div class="header">
         <h2>🎛️ BTK - Percussão</h2>
         <span id="status" class="status-badge">Detectando...</span>
@@ -243,14 +300,25 @@
         </div>
     </div>
 
-    <div id="toastMessage" class="toast">Conectando à planilha...</div>
+    <div id="toastMessage" class="toast">Aguardando ativação...</div>
 
     <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudios do Cache</button>
 </div>
 
 <script>
+    const VALID_LICENSES = [
+        'BTK-2026-VIP',
+        'PERCUSSAO-100',
+        'SHOW-BTK-88'
+    ];
+
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
-    const CACHE_NAME = 'btk-audio-cache-v6';
+    const CACHE_NAME = 'btk-audio-cache-v9';
+
+    const licenseOverlay = document.getElementById('licenseOverlay');
+    const licenseKeyInput = document.getElementById('licenseKeyInput');
+    const btnActivate = document.getElementById('btnActivate');
+    const licenseMessage = document.getElementById('licenseMessage');
 
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
@@ -271,14 +339,34 @@
     let lastMasterTime = 0;
     let wakeLock = null;
 
-    // Impede que a tela do celular apague/bloqueie durante o ensaio
+    function checkLicense() {
+        const savedKey = localStorage.getItem('btk_license_key');
+        if (savedKey && VALID_LICENSES.includes(savedKey.trim().toUpperCase())) {
+            licenseOverlay.classList.add('hidden');
+            initApp();
+        } else {
+            licenseOverlay.classList.remove('hidden');
+        }
+    }
+
+    btnActivate.addEventListener('click', () => {
+        const inputKey = licenseKeyInput.value.trim().toUpperCase();
+        if (VALID_LICENSES.includes(inputKey)) {
+            localStorage.setItem('btk_license_key', inputKey);
+            licenseOverlay.classList.add('hidden');
+            initApp();
+        } else {
+            licenseMessage.textContent = 'Chave inválida. Verifique e tente novamente.';
+        }
+    });
+
     async function requestWakeLock() {
         try {
             if ('wakeLock' in navigator) {
                 wakeLock = await navigator.wakeLock.request('screen');
             }
         } catch (err) {
-            console.warn('Screen Wake Lock não disponível:', err);
+            console.warn('Wake Lock indisponível:', err);
         }
     }
 
@@ -302,7 +390,7 @@
         return url;
     }
 
-    async function init() {
+    async function initApp() {
         await loadSongs();
     }
 
@@ -318,14 +406,14 @@
             localStorage.setItem('btk_songs_manifest', JSON.stringify(songsData));
             updateStatus('Online', 'online');
             toastMessage.textContent = 'Músicas atualizadas!';
-            populateSelect(songsData);
+            await populateSelect(songsData);
         } catch (error) {
             const cached = localStorage.getItem('btk_songs_manifest');
             if (cached) {
                 songsData = JSON.parse(cached);
                 updateStatus('Modo Offline', 'offline');
                 toastMessage.textContent = 'Modo Offline: Lista carregada do cache.';
-                populateSelect(songsData);
+                await populateSelect(songsData);
             } else {
                 updateStatus('Erro', 'offline');
                 toastMessage.textContent = 'Erro ao conectar à planilha.';
@@ -374,15 +462,48 @@
         return parsed;
     }
 
-    function populateSelect(list) {
+    async function populateSelect(list) {
         trackSelect.innerHTML = '<option value="">-- Selecione uma música --</option>';
         list.forEach((song, index) => {
             const opt = document.createElement('option');
             opt.value = index;
-            opt.textContent = `${song.name} (${song.urls.length} faixas)`;
+            opt.textContent = `🎵 ${song.name} (${song.urls.length} faixas)`;
             trackSelect.appendChild(opt);
         });
         trackSelect.disabled = false;
+        
+        // Atualiza os ícones das músicas que já estão no cache
+        await updateSelectCacheIndicators();
+    }
+
+    // Função que verifica o cache local e atualiza os ícones no menu dropdown (✅ para baixadas)
+    async function updateSelectCacheIndicators() {
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            for (let i = 0; i < songsData.length; i++) {
+                const song = songsData[i];
+                let allCached = true;
+
+                for (const url of song.urls) {
+                    const match = await cache.match(url);
+                    if (!match) {
+                        allCached = false;
+                        break;
+                    }
+                }
+
+                const option = trackSelect.options[i + 1];
+                if (option) {
+                    if (allCached) {
+                        option.textContent = `✅ ${song.name} (${song.urls.length} faixas)`;
+                    } else {
+                        option.textContent = `🎵 ${song.name} (${song.urls.length} faixas)`;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Erro ao checar indicadores do cache:', e);
+        }
     }
 
     async function getAudioBlobUrl(url) {
@@ -490,6 +611,10 @@
             btnPlay.disabled = false;
             btnStop.disabled = false;
             toastMessage.textContent = `Pronto! ${selectedSong.name} carregado e sincronizado.`;
+            
+            // Marca imediatamente esta música como salva (✅) no menu dropdown
+            await updateSelectCacheIndicators();
+
         } catch (err) {
             console.error(err);
             toastMessage.textContent = 'Erro ao carregar arquivos de áudio.';
@@ -592,11 +717,13 @@
         clearCurrentAudioObjects();
         const deleted = await caches.delete(CACHE_NAME);
         localStorage.removeItem('btk_songs_manifest');
+        localStorage.removeItem('btk_license_key');
         if (deleted) {
-            toastMessage.textContent = 'Cache de áudio limpo com sucesso!';
+            toastMessage.textContent = 'Cache e licença removidos!';
         } else {
-            toastMessage.textContent = 'Nenhum cache localizado.';
+            toastMessage.textContent = 'Licença removida.';
         }
+        setTimeout(() => location.reload(), 1000);
     });
 
     function updateStatus(text, type) {
@@ -604,7 +731,49 @@
         statusBadge.className = `status-badge ${type}`;
     }
 
-    init();
+    document.addEventListener('keydown', (e) => {
+        if (document.activeElement === trackSelect || document.activeElement === licenseKeyInput) {
+            if (e.key === 'Enter' && document.activeElement === licenseKeyInput) {
+                btnActivate.click();
+            }
+            return;
+        }
+
+        const key = e.key;
+
+        if ([' ', 'PageDown', 'PageUp', 'ArrowUp', 'ArrowDown'].includes(key)) {
+            e.preventDefault();
+        }
+
+        switch (key) {
+            case ' ':
+            case 'Enter':
+            case 'PageDown':
+                if (!btnPlay.disabled) btnPlay.click();
+                break;
+            case 'Escape':
+            case 'PageUp':
+                if (!btnStop.disabled) btnStop.click();
+                break;
+            case 'ArrowUp':
+                speedSlider.value = Math.min(150, parseInt(speedSlider.value) + 5);
+                speedSlider.dispatchEvent(new Event('input'));
+                break;
+            case 'ArrowDown':
+                speedSlider.value = Math.max(50, parseInt(speedSlider.value) - 5);
+                speedSlider.dispatchEvent(new Event('input'));
+                break;
+            default:
+                if (!isNaN(key) && parseInt(key) > 0) {
+                    const idx = parseInt(key) - 1;
+                    const toggleBtns = stemsContainer.querySelectorAll('.btn-toggle');
+                    if (toggleBtns[idx]) toggleBtns[idx].click();
+                }
+                break;
+        }
+    });
+
+    checkLicense();
 </script>
 </body>
 </html>
