@@ -220,7 +220,7 @@
 
 <script>
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
-    const CACHE_NAME = 'btk-audio-cache-v3';
+    const CACHE_NAME = 'btk-audio-cache-v4';
 
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
@@ -337,16 +337,18 @@
         trackSelect.disabled = false;
     }
 
-    // Baixa o áudio e gera uma URL do Blob local no navegador para uso offline/cache
+    // Carrega o arquivo completo no Cache e gera a Blob URL
     async function getAudioBlobUrl(url) {
         const cache = await caches.open(CACHE_NAME);
         let response = await cache.match(url);
 
         if (!response) {
-            toastMessage.textContent = 'Baixando áudio para o cache...';
+            toastMessage.textContent = 'Baixando áudio para o cache local...';
             response = await fetch(url);
             if (response.ok) {
                 cache.put(url, response.clone());
+            } else {
+                throw new Error('Falha no download da faixa');
             }
         } else {
             toastMessage.textContent = 'Carregando do cache local...';
@@ -356,6 +358,18 @@
         const objUrl = URL.createObjectURL(blob);
         objectUrls.push(objUrl);
         return objUrl;
+    }
+
+    // Aguarda o áudio estar totalmente pronto na memória antes de dar PLAY
+    function waitForAudioReady(audio) {
+        return new Promise((resolve) => {
+            if (audio.readyState >= 3) {
+                resolve();
+            } else {
+                audio.addEventListener('canplaythrough', () => resolve(), { once: true });
+                setTimeout(resolve, 3000); // Garante que não trave infinitamente
+            }
+        });
     }
 
     function applyPitchPreservation(audio) {
@@ -395,6 +409,7 @@
                 applyPitchPreservation(audio);
                 audio.playbackRate = speedSlider.value / 100;
 
+                await waitForAudioReady(audio);
                 audioElements.push(audio);
 
                 const row = document.createElement('div');
@@ -426,7 +441,7 @@
 
             btnPlay.disabled = false;
             btnStop.disabled = false;
-            toastMessage.textContent = `Pronto! ${selectedSong.name} carregado.`;
+            toastMessage.textContent = `Pronto! ${selectedSong.name} carregado e sincronizado.`;
         } catch (err) {
             console.error(err);
             toastMessage.textContent = 'Erro ao carregar arquivos de áudio.';
@@ -466,6 +481,7 @@
         btnPlay.textContent = 'PLAY';
         stopSyncAndTimer();
         timerDisplay.textContent = '00:00.0';
+        lastMasterTime = 0;
     }
 
     btnPlay.addEventListener('click', () => {
@@ -498,21 +514,13 @@
 
             const master = audioElements[0];
 
-            // Trata o reinício do Loop contínuo
+            // Detecta a virada do loop no áudio principal e realinha suavemente todos os canais
             if (master.currentTime < lastMasterTime - 0.5) {
                 audioElements.forEach(a => a.currentTime = master.currentTime);
             }
             lastMasterTime = master.currentTime;
 
-            // Corrige desvios de micro-segundos entre as faixas e o mestre
-            for (let i = 1; i < audioElements.length; i++) {
-                const diff = Math.abs(audioElements[i].currentTime - master.currentTime);
-                if (diff > 0.03) {
-                    audioElements[i].currentTime = master.currentTime;
-                }
-            }
-
-            // Atualiza o tempo na tela
+            // Atualiza o relógio na tela
             const current = master.currentTime;
             const mins = Math.floor(current / 60).toString().padStart(2, '0');
             const secs = Math.floor(current % 60).toString().padStart(2, '0');
