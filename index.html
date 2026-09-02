@@ -57,7 +57,6 @@
             }
         }
 
-        /* Modal de Ativação / Licença */
         .license-overlay {
             position: absolute;
             top: 0;
@@ -258,7 +257,6 @@
 <body>
 
 <div class="container">
-    <!-- Tela de Ativação por Licença -->
     <div id="licenseOverlay" class="license-overlay">
         <h2>🔑 Ativação BTK</h2>
         <p style="color: var(--subtext-color); font-size: 0.9rem; margin: 0;">Insira sua chave de licença para liberar o aplicativo.</p>
@@ -308,7 +306,6 @@
 </div>
 
 <script>
-    // LISTA DE CHAVES VÁLIDAS DE LICENÇA (Altere ou adicione as chaves que desejar)
     const VALID_LICENSES = [
         'BTK-2026-VIP',
         'PERCUSSAO-100',
@@ -316,7 +313,7 @@
     ];
 
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
-    const CACHE_NAME = 'btk-audio-cache-v8';
+    const CACHE_NAME = 'btk-audio-cache-v9';
 
     const licenseOverlay = document.getElementById('licenseOverlay');
     const licenseKeyInput = document.getElementById('licenseKeyInput');
@@ -342,7 +339,6 @@
     let lastMasterTime = 0;
     let wakeLock = null;
 
-    // Gerenciador de Licença
     function checkLicense() {
         const savedKey = localStorage.getItem('btk_license_key');
         if (savedKey && VALID_LICENSES.includes(savedKey.trim().toUpperCase())) {
@@ -410,14 +406,14 @@
             localStorage.setItem('btk_songs_manifest', JSON.stringify(songsData));
             updateStatus('Online', 'online');
             toastMessage.textContent = 'Músicas atualizadas!';
-            populateSelect(songsData);
+            await populateSelect(songsData);
         } catch (error) {
             const cached = localStorage.getItem('btk_songs_manifest');
             if (cached) {
                 songsData = JSON.parse(cached);
                 updateStatus('Modo Offline', 'offline');
                 toastMessage.textContent = 'Modo Offline: Lista carregada do cache.';
-                populateSelect(songsData);
+                await populateSelect(songsData);
             } else {
                 updateStatus('Erro', 'offline');
                 toastMessage.textContent = 'Erro ao conectar à planilha.';
@@ -466,15 +462,48 @@
         return parsed;
     }
 
-    function populateSelect(list) {
+    async function populateSelect(list) {
         trackSelect.innerHTML = '<option value="">-- Selecione uma música --</option>';
         list.forEach((song, index) => {
             const opt = document.createElement('option');
             opt.value = index;
-            opt.textContent = `${song.name} (${song.urls.length} faixas)`;
+            opt.textContent = `🎵 ${song.name} (${song.urls.length} faixas)`;
             trackSelect.appendChild(opt);
         });
         trackSelect.disabled = false;
+        
+        // Atualiza os ícones das músicas que já estão no cache
+        await updateSelectCacheIndicators();
+    }
+
+    // Função que verifica o cache local e atualiza os ícones no menu dropdown (✅ para baixadas)
+    async function updateSelectCacheIndicators() {
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            for (let i = 0; i < songsData.length; i++) {
+                const song = songsData[i];
+                let allCached = true;
+
+                for (const url of song.urls) {
+                    const match = await cache.match(url);
+                    if (!match) {
+                        allCached = false;
+                        break;
+                    }
+                }
+
+                const option = trackSelect.options[i + 1];
+                if (option) {
+                    if (allCached) {
+                        option.textContent = `✅ ${song.name} (${song.urls.length} faixas)`;
+                    } else {
+                        option.textContent = `🎵 ${song.name} (${song.urls.length} faixas)`;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Erro ao checar indicadores do cache:', e);
+        }
     }
 
     async function getAudioBlobUrl(url) {
@@ -582,6 +611,10 @@
             btnPlay.disabled = false;
             btnStop.disabled = false;
             toastMessage.textContent = `Pronto! ${selectedSong.name} carregado e sincronizado.`;
+            
+            // Marca imediatamente esta música como salva (✅) no menu dropdown
+            await updateSelectCacheIndicators();
+
         } catch (err) {
             console.error(err);
             toastMessage.textContent = 'Erro ao carregar arquivos de áudio.';
@@ -684,7 +717,7 @@
         clearCurrentAudioObjects();
         const deleted = await caches.delete(CACHE_NAME);
         localStorage.removeItem('btk_songs_manifest');
-        localStorage.removeItem('btk_license_key'); // Reseta a licença
+        localStorage.removeItem('btk_license_key');
         if (deleted) {
             toastMessage.textContent = 'Cache e licença removidos!';
         } else {
@@ -740,7 +773,6 @@
         }
     });
 
-    // Inicia verificação de licença
     checkLicense();
 </script>
 </body>
