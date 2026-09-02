@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>BTK - Multi-Track Studio</title>
     <style>
         :root {
@@ -16,6 +16,11 @@
             --btn-off: #424242;
         }
 
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* Remove destaque azul ao tocar no mobile */
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
@@ -24,6 +29,8 @@
             padding: 20px;
             display: flex;
             justify-content: center;
+            align-items: center;
+            min-height: 100vh;
         }
 
         .container {
@@ -36,6 +43,20 @@
             display: flex;
             flex-direction: column;
             gap: 18px;
+        }
+
+        /* Otimização responsiva para celular: vira um App Fullscreen em telas pequenas */
+        @media (max-width: 500px) {
+            body {
+                padding: 0;
+            }
+            .container {
+                max-width: 100%;
+                min-height: 100vh;
+                border-radius: 0;
+                box-shadow: none;
+                justify-content: space-between;
+            }
         }
 
         .header {
@@ -69,6 +90,7 @@
             border-radius: 12px;
             outline: none;
             cursor: pointer;
+            touch-action: manipulation;
         }
 
         select:focus { border-color: var(--accent-color); }
@@ -98,10 +120,11 @@
 
         input[type="range"] {
             width: 100%;
-            height: 12px;
-            border-radius: 6px;
+            height: 16px; /* Aumentado para facilitar o toque no celular */
+            border-radius: 8px;
             accent-color: var(--accent-color);
             cursor: pointer;
+            touch-action: manipulation;
         }
 
         .player-controls {
@@ -111,17 +134,23 @@
         }
 
         button {
-            padding: 16px;
+            padding: 18px; /* Área de clique confortável para dedos */
             font-size: 1rem;
             font-weight: bold;
             border: none;
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.2s;
+            touch-action: manipulation;
         }
 
         button:disabled { opacity: 0.4; cursor: not-allowed; }
-        button:active:not(:disabled) { opacity: 0.8; }
+        button:active:not(:disabled) { transform: scale(0.98); }
+
+        /* Aplica efeito hover apenas em dispositivos com ponteiro de mouse */
+        @media (hover: hover) {
+            button:hover:not(:disabled) { filter: brightness(1.15); }
+        }
 
         .btn-play { background: var(--accent-color); color: #000; }
         .btn-stop { background: #333; color: var(--text-color); }
@@ -129,7 +158,7 @@
             background: transparent;
             color: var(--subtext-color);
             border: 1px solid #444;
-            padding: 8px 12px;
+            padding: 10px 12px;
             font-size: 0.8rem;
             border-radius: 8px;
             margin-top: 5px;
@@ -158,10 +187,10 @@
         .stem-title { font-size: 0.9rem; font-weight: bold; }
 
         .btn-toggle {
-            padding: 8px 16px;
+            padding: 10px 18px;
             font-size: 0.85rem;
-            border-radius: 6px;
-            min-width: 70px;
+            border-radius: 8px;
+            min-width: 75px;
         }
 
         .btn-toggle.on { background: var(--success-color); color: #fff; }
@@ -179,7 +208,7 @@
 
 <div class="container">
     <div class="header">
-        <h2>🎛️ BTK - Percussão 4</h2>
+        <h2>🎛️ BTK - Percussão</h2>
         <span id="status" class="status-badge">Detectando...</span>
     </div>
 
@@ -220,7 +249,7 @@
 
 <script>
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
-    const CACHE_NAME = 'btk-audio-cache-v5';
+    const CACHE_NAME = 'btk-audio-cache-v6';
 
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
@@ -239,6 +268,24 @@
     let isPlaying = false;
     let syncInterval = null;
     let lastMasterTime = 0;
+    let wakeLock = null;
+
+    // Impede que a tela do celular apague/bloqueie durante o ensaio
+    async function requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator) {
+                wakeLock = await navigator.wakeLock.request('screen');
+            }
+        } catch (err) {
+            console.warn('Screen Wake Lock não disponível:', err);
+        }
+    }
+
+    function releaseWakeLock() {
+        if (wakeLock !== null) {
+            wakeLock.release().then(() => { wakeLock = null; });
+        }
+    }
 
     function fixDropboxUrl(url) {
         if (!url) return '';
@@ -404,7 +451,7 @@
                 
                 audio.loop = true;
                 audio.preload = 'auto';
-                audio.volume = 1; // Garante que o volume inicial seja 100%
+                audio.volume = 1;
                 applyPitchPreservation(audio);
                 audio.playbackRate = speedSlider.value / 100;
 
@@ -422,7 +469,6 @@
                 toggleBtn.className = 'btn-toggle on';
                 toggleBtn.textContent = 'ON';
 
-                // Controle de MUTE contínuo usando VOLUME (Evita resets no motor de pitch)
                 toggleBtn.addEventListener('click', () => {
                     if (audio.volume > 0) {
                         audio.volume = 0;
@@ -463,6 +509,7 @@
 
         isPlaying = true;
         btnPlay.textContent = 'PAUSE';
+        requestWakeLock();
         startSyncAndTimer();
     }
 
@@ -470,6 +517,7 @@
         audioElements.forEach(audio => audio.pause());
         isPlaying = false;
         btnPlay.textContent = 'PLAY';
+        releaseWakeLock();
         stopSyncAndTimer();
     }
 
@@ -480,6 +528,7 @@
         });
         isPlaying = false;
         btnPlay.textContent = 'PLAY';
+        releaseWakeLock();
         stopSyncAndTimer();
         timerDisplay.textContent = '00:00.0';
         lastMasterTime = 0;
