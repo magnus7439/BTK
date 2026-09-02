@@ -283,7 +283,7 @@
 
     <div class="speed-control">
         <div class="speed-header">
-            <span>⏱️ VELOCIDADE (BPM)</span>
+            <span>⏱️ VELOCIDADE</span>
             <span id="speedDisplay">100%</span>
         </div>
         <input type="range" id="speedSlider" min="50" max="150" value="100" step="5">
@@ -313,7 +313,7 @@
     ];
 
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
-    const CACHE_NAME = 'btk-audio-cache-v9';
+    const CACHE_NAME = 'btk-audio-cache-v11';
 
     const licenseOverlay = document.getElementById('licenseOverlay');
     const licenseKeyInput = document.getElementById('licenseKeyInput');
@@ -338,6 +338,7 @@
     let syncInterval = null;
     let lastMasterTime = 0;
     let wakeLock = null;
+    let currentOriginalBpm = null;
 
     function checkLicense() {
         const savedKey = localStorage.getItem('btk_license_key');
@@ -378,7 +379,7 @@
 
     function fixDropboxUrl(url) {
         if (!url) return '';
-        url = url.trim();
+        url = url.trim().replace(/\r/g, '');
         if (url.includes('dropbox.com')) {
             url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
             if (url.includes('dl=0')) {
@@ -388,6 +389,12 @@
             }
         }
         return url;
+    }
+
+    // Tenta extrair o valor do BPM a partir do título da música
+    function extractBpmFromName(name) {
+        const match = name.match(/(\d+)\s*bpm/i);
+        return match ? parseInt(match[1]) : null;
     }
 
     async function initApp() {
@@ -422,7 +429,7 @@
     }
 
     function parseCSV(text) {
-        const lines = text.trim().split('\n');
+        const lines = text.split(/\r?\n/);
         const parsed = [];
 
         for (let line of lines) {
@@ -455,7 +462,8 @@
                     .filter(u => u.startsWith('http'));
 
                 if (urls.length > 0) {
-                    parsed.push({ name: songName, urls: urls });
+                    const originalBpm = extractBpmFromName(songName);
+                    parsed.push({ name: songName, urls: urls, originalBpm: originalBpm });
                 }
             }
         }
@@ -471,12 +479,9 @@
             trackSelect.appendChild(opt);
         });
         trackSelect.disabled = false;
-        
-        // Atualiza os ícones das músicas que já estão no cache
         await updateSelectCacheIndicators();
     }
 
-    // Função que verifica o cache local e atualiza os ícones no menu dropdown (✅ para baixadas)
     async function updateSelectCacheIndicators() {
         try {
             const cache = await caches.open(CACHE_NAME);
@@ -494,11 +499,9 @@
 
                 const option = trackSelect.options[i + 1];
                 if (option) {
-                    if (allCached) {
-                        option.textContent = `✅ ${song.name} (${song.urls.length} faixas)`;
-                    } else {
-                        option.textContent = `🎵 ${song.name} (${song.urls.length} faixas)`;
-                    }
+                    option.textContent = allCached 
+                        ? `✅ ${song.name} (${song.urls.length} faixas)`
+                        : `🎵 ${song.name} (${song.urls.length} faixas)`;
                 }
             }
         } catch (e) {
@@ -507,25 +510,31 @@
     }
 
     async function getAudioBlobUrl(url) {
-        const cache = await caches.open(CACHE_NAME);
-        let response = await cache.match(url);
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            let response = await cache.match(url);
 
-        if (!response) {
-            toastMessage.textContent = 'Baixando áudio para o cache local...';
-            response = await fetch(url);
-            if (response.ok) {
-                cache.put(url, response.clone());
+            if (!response) {
+                toastMessage.textContent = 'Baixando áudio para o cache local...';
+                response = await fetch(url);
+                if (response.ok) {
+                    cache.put(url, response.clone());
+                } else {
+                    throw new Error('Falha no download da faixa');
+                }
             } else {
-                throw new Error('Falha no download da faixa');
+                toastMessage.textContent = 'Carregando do cache local...';
             }
-        } else {
-            toastMessage.textContent = 'Carregando do cache local...';
-        }
 
-        const blob = await response.blob();
-        const objUrl = URL.createObjectURL(blob);
-        objectUrls.push(objUrl);
-        return objUrl;
+            const blob = await response.blob();
+            const objUrl = URL.createObjectURL(blob);
+            objectUrls.push(objUrl);
+            return objUrl;
+        } catch (err) {
+            console.warn('Usando streaming direto para:', url, err);
+            toastMessage.textContent = 'Conectando áudio via streaming...';
+            return url;
+        }
     }
 
     function waitForAudioReady(audio) {
@@ -533,8 +542,10 @@
             if (audio.readyState >= 3) {
                 resolve();
             } else {
-                audio.addEventListener('canplaythrough', () => resolve(), { once: true });
-                setTimeout(resolve, 3000);
+                const onReady = () => resolve();
+                audio.addEventListener('canplaythrough', onReady, { once: true });
+                audio.addEventListener('error', onReady, { once: true });
+                setTimeout(resolve, 3500);
             }
         });
     }
@@ -543,6 +554,16 @@
         audio.preservesPitch = true;
         audio.webkitPreservesPitch = true;
         audio.mozPreservesPitch = true;
+    }
+
+    function updateSpeedDisplay() {
+        const percent = parseInt(speedSlider.value);
+        if (currentOriginalBpm) {
+            const calculatedBpm = Math.round(currentOriginalBpm * (percent / 100));
+            speedDisplay.textContent = `${calculatedBpm} BPM (${percent}%)`;
+        } else {
+            speedDisplay.textContent = `${percent}%`;
+        }
     }
 
     trackSelect.addEventListener('change', async (e) => {
@@ -554,11 +575,16 @@
         if (index === '') {
             btnPlay.disabled = true;
             btnStop.disabled = true;
+            currentOriginalBpm = null;
+            updateSpeedDisplay();
             stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione uma música para carregar os canais.</div>';
             return;
         }
 
         const selectedSong = songsData[index];
+        currentOriginalBpm = selectedSong.originalBpm;
+        updateSpeedDisplay();
+
         btnPlay.disabled = true;
         btnStop.disabled = true;
         stemsContainer.innerHTML = '';
@@ -568,8 +594,8 @@
             for (let i = 0; i < selectedSong.urls.length; i++) {
                 toastMessage.textContent = `Carregando faixa ${i + 1} de ${selectedSong.urls.length}...`;
                 
-                const blobUrl = await getAudioBlobUrl(selectedSong.urls[i]);
-                const audio = new Audio(blobUrl);
+                const audioSource = await getAudioBlobUrl(selectedSong.urls[i]);
+                const audio = new Audio(audioSource);
                 
                 audio.loop = true;
                 audio.preload = 'auto';
@@ -610,14 +636,12 @@
 
             btnPlay.disabled = false;
             btnStop.disabled = false;
-            toastMessage.textContent = `Pronto! ${selectedSong.name} carregado e sincronizado.`;
-            
-            // Marca imediatamente esta música como salva (✅) no menu dropdown
+            toastMessage.textContent = `Pronto! ${selectedSong.name} carregado.`;
             await updateSelectCacheIndicators();
 
         } catch (err) {
             console.error(err);
-            toastMessage.textContent = 'Erro ao carregar arquivos de áudio.';
+            toastMessage.textContent = 'Erro ao processar áudios.';
         }
     });
 
@@ -673,9 +697,8 @@
     });
 
     speedSlider.addEventListener('input', (e) => {
-        const val = e.target.value;
-        speedDisplay.textContent = `${val}%`;
-        const rate = val / 100;
+        updateSpeedDisplay();
+        const rate = parseInt(e.target.value) / 100;
 
         audioElements.forEach(audio => {
             audio.playbackRate = rate;
