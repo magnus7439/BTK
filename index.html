@@ -179,7 +179,7 @@
 
 <div class="container">
     <div class="header">
-        <h2>🎛️ BTK - Percussão</h2>
+        <h2>🎛️ BTK - Percussão 4</h2>
         <span id="status" class="status-badge">Detectando...</span>
     </div>
 
@@ -220,7 +220,7 @@
 
 <script>
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
-    const CACHE_NAME = 'btk-audio-cache-v4';
+    const CACHE_NAME = 'btk-audio-cache-v5';
 
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
@@ -337,7 +337,6 @@
         trackSelect.disabled = false;
     }
 
-    // Carrega o arquivo completo no Cache e gera a Blob URL
     async function getAudioBlobUrl(url) {
         const cache = await caches.open(CACHE_NAME);
         let response = await cache.match(url);
@@ -360,14 +359,13 @@
         return objUrl;
     }
 
-    // Aguarda o áudio estar totalmente pronto na memória antes de dar PLAY
     function waitForAudioReady(audio) {
         return new Promise((resolve) => {
             if (audio.readyState >= 3) {
                 resolve();
             } else {
                 audio.addEventListener('canplaythrough', () => resolve(), { once: true });
-                setTimeout(resolve, 3000); // Garante que não trave infinitamente
+                setTimeout(resolve, 3000);
             }
         });
     }
@@ -406,6 +404,7 @@
                 
                 audio.loop = true;
                 audio.preload = 'auto';
+                audio.volume = 1; // Garante que o volume inicial seja 100%
                 applyPitchPreservation(audio);
                 audio.playbackRate = speedSlider.value / 100;
 
@@ -423,12 +422,14 @@
                 toggleBtn.className = 'btn-toggle on';
                 toggleBtn.textContent = 'ON';
 
+                // Controle de MUTE contínuo usando VOLUME (Evita resets no motor de pitch)
                 toggleBtn.addEventListener('click', () => {
-                    audio.muted = !audio.muted;
-                    if (audio.muted) {
+                    if (audio.volume > 0) {
+                        audio.volume = 0;
                         toggleBtn.textContent = 'OFF';
                         toggleBtn.className = 'btn-toggle off';
                     } else {
+                        audio.volume = 1;
                         toggleBtn.textContent = 'ON';
                         toggleBtn.className = 'btn-toggle on';
                     }
@@ -514,13 +515,11 @@
 
             const master = audioElements[0];
 
-            // Detecta a virada do loop no áudio principal e realinha suavemente todos os canais
             if (master.currentTime < lastMasterTime - 0.5) {
                 audioElements.forEach(a => a.currentTime = master.currentTime);
             }
             lastMasterTime = master.currentTime;
 
-            // Atualiza o relógio na tela
             const current = master.currentTime;
             const mins = Math.floor(current / 60).toString().padStart(2, '0');
             const secs = Math.floor(current % 60).toString().padStart(2, '0');
