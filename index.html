@@ -313,7 +313,7 @@
     ];
 
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
-    const CACHE_NAME = 'btk-audio-cache-v11';
+    const CACHE_NAME = 'btk-audio-cache-v12';
 
     const licenseOverlay = document.getElementById('licenseOverlay');
     const licenseKeyInput = document.getElementById('licenseKeyInput');
@@ -339,6 +339,7 @@
     let lastMasterTime = 0;
     let wakeLock = null;
     let currentOriginalBpm = null;
+    let instrumentNames = [];
 
     function checkLicense() {
         const savedKey = localStorage.getItem('btk_license_key');
@@ -391,7 +392,6 @@
         return url;
     }
 
-    // Tenta extrair o valor do BPM a partir do título da música
     function extractBpmFromName(name) {
         const match = name.match(/(\d+)\s*bpm/i);
         return match ? parseInt(match[1]) : null;
@@ -431,40 +431,36 @@
     function parseCSV(text) {
         const lines = text.split(/\r?\n/);
         const parsed = [];
+        instrumentNames = [];
 
-        for (let line of lines) {
-            line = line.trim();
+        for (let l = 0; l < lines.length; l++) {
+            let line = lines[l].trim();
             if (!line) continue;
 
-            let parts = [];
-            let current = '';
-            let inQuotes = false;
+            let parts = line.split(',').map(p => p.replace(/"/g, '').trim());
 
-            for (let i = 0; i < line.length; i++) {
-                const char = line[i];
-                if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === ',' && !inQuotes) {
-                    parts.push(current);
-                    current = '';
-                } else {
-                    current += char;
+            if (l === 0) {
+                instrumentNames = parts.slice(1);
+                continue;
+            }
+
+            const songName = parts[0];
+            if (!songName || songName.toLowerCase() === 'nome') continue;
+
+            let tracks = [];
+            for (let i = 1; i < parts.length; i++) {
+                const url = fixDropboxUrl(parts[i]);
+                if (url && url.startsWith('http')) {
+                    tracks.push({
+                        name: instrumentNames[i - 1] || `Faixa ${i}`,
+                        url: url
+                    });
                 }
             }
-            parts.push(current);
 
-            if (parts.length >= 2) {
-                const songName = parts[0].replace(/"/g, '').trim();
-                if (!songName || songName.toLowerCase() === 'nome') continue;
-
-                const urls = parts.slice(1)
-                    .map(u => fixDropboxUrl(u.replace(/"/g, '')))
-                    .filter(u => u.startsWith('http'));
-
-                if (urls.length > 0) {
-                    const originalBpm = extractBpmFromName(songName);
-                    parsed.push({ name: songName, urls: urls, originalBpm: originalBpm });
-                }
+            if (tracks.length > 0) {
+                const originalBpm = extractBpmFromName(songName);
+                parsed.push({ name: songName, tracks: tracks, originalBpm: originalBpm });
             }
         }
         return parsed;
@@ -475,7 +471,7 @@
         list.forEach((song, index) => {
             const opt = document.createElement('option');
             opt.value = index;
-            opt.textContent = `🎵 ${song.name} (${song.urls.length} faixas)`;
+            opt.textContent = `🎵 ${song.name} (${song.tracks.length} faixas)`;
             trackSelect.appendChild(opt);
         });
         trackSelect.disabled = false;
@@ -489,8 +485,8 @@
                 const song = songsData[i];
                 let allCached = true;
 
-                for (const url of song.urls) {
-                    const match = await cache.match(url);
+                for (const track of song.tracks) {
+                    const match = await cache.match(track.url);
                     if (!match) {
                         allCached = false;
                         break;
@@ -500,8 +496,8 @@
                 const option = trackSelect.options[i + 1];
                 if (option) {
                     option.textContent = allCached 
-                        ? `✅ ${song.name} (${song.urls.length} faixas)`
-                        : `🎵 ${song.name} (${song.urls.length} faixas)`;
+                        ? `✅ ${song.name} (${song.tracks.length} faixas)`
+                        : `🎵 ${song.name} (${song.tracks.length} faixas)`;
                 }
             }
         } catch (e) {
@@ -591,10 +587,11 @@
         audioElements = [];
 
         try {
-            for (let i = 0; i < selectedSong.urls.length; i++) {
-                toastMessage.textContent = `Carregando faixa ${i + 1} de ${selectedSong.urls.length}...`;
+            for (let i = 0; i < selectedSong.tracks.length; i++) {
+                const track = selectedSong.tracks[i];
+                toastMessage.textContent = `Carregando ${track.name} (${i + 1} de ${selectedSong.tracks.length})...`;
                 
-                const audioSource = await getAudioBlobUrl(selectedSong.urls[i]);
+                const audioSource = await getAudioBlobUrl(track.url);
                 const audio = new Audio(audioSource);
                 
                 audio.loop = true;
@@ -611,7 +608,7 @@
 
                 const title = document.createElement('span');
                 title.className = 'stem-title';
-                title.textContent = `Faixa ${i + 1}`;
+                title.textContent = track.name;
 
                 const toggleBtn = document.createElement('button');
                 toggleBtn.className = 'btn-toggle on';
