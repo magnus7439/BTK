@@ -1,27 +1,993 @@
-<!-- Componente Visual da Barra de Progresso -->
-<div class="loop-progress-container">
-    <div id="loopProgressBar" class="loop-progress-bar"></div>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BTK - Multi-Track Studio</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent-color: #ff9800;
+            --fill-color: #e91e63;
+            --ending-color: #9c27b0;
+            --text-color: #ffffff;
+            --subtext-color: #b0b0b0;
+            --error-color: #f44336;
+            --success-color: #4caf50;
+            --btn-off: #424242;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            position: relative;
+        }
+
+        @media (max-width: 500px) {
+            body { padding: 0; }
+            .container {
+                max-width: 100%;
+                min-height: 100vh;
+                border-radius: 0;
+                box-shadow: none;
+                justify-content: space-between;
+            }
+        }
+
+        /* Overlay de Licença */
+        .license-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(18, 18, 18, 0.96);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            z-index: 200;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            padding: 24px; text-align: center; gap: 16px;
+        }
+        .license-overlay.hidden { display: none; }
+
+        .license-input {
+            width: 100%; padding: 16px; font-size: 1.1rem;
+            text-align: center; letter-spacing: 2px;
+            background: #2a2a2a; color: var(--text-color);
+            border: 2px solid #444; border-radius: 12px;
+            outline: none; text-transform: uppercase;
+        }
+
+        /* Navegação por Abas */
+        .nav-tabs {
+            display: flex;
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            background: transparent;
+            color: var(--subtext-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        .tab-content { display: none; flex-direction: column; gap: 18px; }
+        .tab-content.active { display: flex; }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 12px;
+        }
+
+        .header h2 { margin: 0; font-size: 1.3rem; }
+
+        .status-badge {
+            font-size: 0.8rem; padding: 4px 8px;
+            border-radius: 12px; background: #333;
+            color: var(--subtext-color);
+        }
+        .status-badge.online { background: rgba(76, 175, 80, 0.2); color: var(--success-color); }
+        .status-badge.offline { background: rgba(244, 67, 54, 0.2); color: var(--error-color); }
+
+        select {
+            width: 100%; padding: 14px; font-size: 0.95rem;
+            background: #2a2a2a; color: var(--text-color);
+            border: 2px solid #444; border-radius: 12px;
+            outline: none; cursor: pointer;
+        }
+
+        /* Display do Timer e Barra de Progresso Cíclica */
+        .timer-box {
+            text-align: center; background: #181818;
+            padding: 16px; border-radius: 12px;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+
+        .timer-label { font-size: 0.8rem; color: var(--subtext-color); }
+        .timer-display { font-size: 2.2rem; font-weight: bold; font-family: monospace; color: var(--accent-color); }
+
+        .loop-progress-container {
+            width: 100%;
+            height: 12px;
+            background-color: #2a2a2a;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #444;
+            position: relative;
+        }
+
+        .loop-progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--accent-color);
+            transition: width 0.08s linear, background-color 0.3s;
+        }
+
+        .loop-progress-bar.armed-fill {
+            background-color: var(--fill-color);
+            animation: pulse-bar 0.8s infinite alternate;
+        }
+
+        .loop-progress-bar.armed-ending {
+            background-color: var(--ending-color);
+            animation: pulse-bar 0.8s infinite alternate;
+        }
+
+        @keyframes pulse-bar {
+            from { opacity: 1; }
+            to { opacity: 0.6; }
+        }
+
+        .speed-control { display: flex; flex-direction: column; gap: 8px; }
+        .speed-header { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: bold; }
+
+        input[type="range"] {
+            width: 100%; height: 16px; border-radius: 8px;
+            accent-color: var(--accent-color); cursor: pointer;
+        }
+
+        .player-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        button {
+            padding: 16px; font-size: 1rem; font-weight: bold;
+            border: none; border-radius: 12px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-play { background: var(--accent-color); color: #000; }
+        .btn-stop { background: #333; color: var(--text-color); }
+        .btn-stop.armed { background: var(--ending-color); color: #fff; }
+        
+        .btn-fill {
+            background: var(--fill-color); color: #fff;
+            grid-column: span 2; font-size: 1.05rem;
+        }
+        .btn-fill.armed { animation: pulse 0.8s infinite alternate; background: #ff5252; }
+
+        @keyframes pulse {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0.7; transform: scale(0.99); }
+        }
+
+        .btn-clear-cache {
+            background: transparent; color: var(--subtext-color);
+            border: 1px solid #444; padding: 10px 12px;
+            font-size: 0.8rem; border-radius: 8px; margin-top: 5px;
+        }
+
+        .stems-container {
+            display: flex; flex-direction: column; gap: 10px;
+            background: #181818; padding: 12px; border-radius: 12px;
+            max-height: 200px; overflow-y: auto;
+        }
+
+        .stem-row {
+            display: flex; justify-content: space-between;
+            align-items: center; background: #2a2a2a;
+            padding: 10px 14px; border-radius: 8px;
+        }
+
+        .btn-toggle { padding: 8px 14px; font-size: 0.85rem; border-radius: 8px; min-width: 65px; }
+        .btn-toggle.on { background: var(--success-color); color: #fff; }
+        .btn-toggle.off { background: var(--btn-off); color: var(--subtext-color); }
+
+        .toast { font-size: 0.85rem; text-align: center; color: var(--subtext-color); min-height: 20px; }
+
+        /* Estilos do Configurator do Pedal */
+        .pedal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .pedal-card {
+            background: #181818; padding: 12px; border-radius: 12px;
+            border: 1px solid #333; display: flex; flex-direction: column; gap: 8px;
+        }
+        .pedal-title {
+            font-size: 0.9rem; font-weight: bold; color: var(--accent-color);
+            display: flex; justify-content: space-between;
+        }
+        .pedal-key-badge {
+            font-size: 0.75rem; background: #333; padding: 2px 6px;
+            border-radius: 6px; color: var(--subtext-color);
+        }
+        .test-box {
+            background: #181818; border: 2px dashed #444; padding: 14px;
+            border-radius: 12px; text-align: center; font-size: 0.85rem; color: var(--subtext-color);
+        }
+        .test-box.active { border-color: var(--success-color); color: var(--success-color); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Overlay de Licença -->
+    <div id="licenseOverlay" class="license-overlay">
+        <h2>🔑 Ativação BTK</h2>
+        <p style="color: var(--subtext-color); font-size: 0.9rem; margin: 0;">Insira sua chave de licença para liberar o aplicativo.</p>
+        <input type="text" id="licenseKeyInput" class="license-input" placeholder="XXXX-XXXX-XXXX" autocomplete="off">
+        <button id="btnActivate" style="width:100%; background:var(--accent-color); color:#000; font-weight:bold;">ATIVAR LICENÇA</button>
+        <div id="licenseMessage" style="color: var(--error-color); font-size: 0.85rem; min-height: 18px;"></div>
+    </div>
+
+    <div class="header">
+        <h2>🥁 BTK Studio</h2>
+        <span id="status" class="status-badge">Detectando...</span>
+    </div>
+
+    <!-- Abas de Navegação -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('playerTab')">🥁 Player</button>
+        <button class="tab-btn" onclick="switchTab('pedalTab')">🎛️ Config. Pedal</button>
+    </div>
+
+    <!-- ABA 1: PLAYER DE ÁUDIO -->
+    <div id="playerTab" class="tab-content active">
+        <div>
+            <select id="trackSelect" disabled>
+                <option>Carregando lista...</option>
+            </select>
+        </div>
+
+        <!-- Timer + Barra de Progresso Cíclica -->
+        <div class="timer-box">
+            <div class="timer-label">⏱️ PROGRESSO DO CICLO DO LOOP</div>
+            <div id="timerDisplay" class="timer-display">00:00.0</div>
+            
+            <div class="loop-progress-container">
+                <div id="loopProgressBar" class="loop-progress-bar"></div>
+            </div>
+        </div>
+
+        <div class="speed-control">
+            <div class="speed-header">
+                <span>⏱️ VELOCIDADE</span>
+                <span id="speedDisplay">100%</span>
+            </div>
+            <input type="range" id="speedSlider" min="50" max="150" value="100" step="5">
+        </div>
+
+        <div class="player-controls">
+            <button id="btnPlay" class="btn-play" disabled>PLAY</button>
+            <button id="btnStop" class="btn-stop" disabled>STOP</button>
+            <button id="btnFill" class="btn-fill" disabled>🪘 VIRADA / FILL</button>
+        </div>
+
+        <div id="stemsContainer" class="stems-container">
+            <div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">
+                Selecione uma música para carregar os canais.
+            </div>
+        </div>
+
+        <div id="toastMessage" class="toast">Aguardando ativação...</div>
+        <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudio Selecionado do Cache</button>
+    </div>
+
+    <!-- ABA 2: CONFIGURAÇÃO DO PEDAL -->
+    <div id="pedalTab" class="tab-content">
+        <div style="font-size: 0.85rem; color: var(--subtext-color); text-align: center;">
+            Mapeamento do Chocolate Plus no modo <b>Keyboard B</b>:
+        </div>
+
+        <div class="pedal-grid">
+            <div class="pedal-card">
+                <div class="pedal-title"><span>PEDAL A</span><span class="pedal-key-badge">PageUp</span></div>
+                <select id="actionPedalA" onchange="savePedalConfig()">
+                    <option value="stop">⏹ Stop / Finalização</option>
+                    <option value="play">▶ Play / Pause</option>
+                    <option value="fill">🪘 Virada / Fill</option>
+                    <option value="speed_up">⏱️ Velocidade +5%</option>
+                    <option value="speed_down">⏱️ Velocidade -5%</option>
+                    <option value="none">❌ Nenhuma Ação</option>
+                </select>
+            </div>
+
+            <div class="pedal-card">
+                <div class="pedal-title"><span>PEDAL B</span><span class="pedal-key-badge">PageDown</span></div>
+                <select id="actionPedalB" onchange="savePedalConfig()">
+                    <option value="play">▶ Play / Pause</option>
+                    <option value="fill">🪘 Virada / Fill</option>
+                    <option value="stop">⏹ Stop / Finalização</option>
+                    <option value="speed_up">⏱️ Velocidade +5%</option>
+                    <option value="speed_down">⏱️ Velocidade -5%</option>
+                    <option value="none">❌ Nenhuma Ação</option>
+                </select>
+            </div>
+
+            <div class="pedal-card">
+                <div class="pedal-title"><span>PEDAL C</span><span class="pedal-key-badge">Espaço</span></div>
+                <select id="actionPedalC" onchange="savePedalConfig()">
+                    <option value="fill">🪘 Virada / Fill</option>
+                    <option value="play">▶ Play / Pause</option>
+                    <option value="stop">⏹ Stop / Finalização</option>
+                    <option value="speed_up">⏱️ Velocidade +5%</option>
+                    <option value="speed_down">⏱️ Velocidade -5%</option>
+                    <option value="none">❌ Nenhuma Ação</option>
+                </select>
+            </div>
+
+            <div class="pedal-card">
+                <div class="pedal-title"><span>PEDAL D</span><span class="pedal-key-badge">Enter</span></div>
+                <select id="actionPedalD" onchange="savePedalConfig()">
+                    <option value="speed_up">⏱️ Velocidade +5%</option>
+                    <option value="speed_down">⏱️ Velocidade -5%</option>
+                    <option value="play">▶ Play / Pause</option>
+                    <option value="fill">🪘 Virada / Fill</option>
+                    <option value="stop">⏹ Stop / Finalização</option>
+                    <option value="none">❌ Nenhuma Ação</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="testPedalBox" class="test-box">
+            🦶 <b>TESTE DO PEDAL:</b> Pise em qualquer botão do Chocolate Plus para validar o sinal.
+        </div>
+    </div>
 </div>
 
-<style>
-    .loop-progress-container {
-        width: 100%;
-        height: 12px;
-        background-color: #2a2a2a;
-        border-radius: 6px;
-        overflow: hidden;
-        border: 1px solid #444;
+<script>
+    const VALID_LICENSES = ['BTK-2026-VIP', 'PERCUSSAO-100', 'SHOW-BTK-88'];
+    const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
+    const CACHE_NAME = 'btk-audio-cache-v16';
+
+    const licenseOverlay = document.getElementById('licenseOverlay');
+    const licenseKeyInput = document.getElementById('licenseKeyInput');
+    const trackSelect = document.getElementById('trackSelect');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const loopProgressBar = document.getElementById('loopProgressBar');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedDisplay = document.getElementById('speedDisplay');
+    const btnPlay = document.getElementById('btnPlay');
+    const btnStop = document.getElementById('btnStop');
+    const btnFill = document.getElementById('btnFill');
+    const btnClearCache = document.getElementById('btnClearCache');
+    const stemsContainer = document.getElementById('stemsContainer');
+    const statusBadge = document.getElementById('status');
+    const toastMessage = document.getElementById('toastMessage');
+
+    let songsData = [];
+    let audioElements = [];
+    let fillAudioElements = [];
+    let endingAudioElements = [];
+    let objectUrls = [];
+    let isPlaying = false;
+    let isFillArmed = false;
+    let isFillPlaying = false;
+    let isEndingArmed = false;
+    let isEndingPlaying = false;
+    let syncInterval = null;
+    let lastMasterTime = 0;
+    let wakeLock = null;
+    let currentOriginalBpm = null;
+
+    let pedalConfig = {
+        'pageup': 'stop',
+        'pagedown': 'play',
+        ' ': 'fill',
+        'enter': 'speed_up'
+    };
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        if (tabId === 'playerTab') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('playerTab').classList.add('active');
+        } else {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('pedalTab').classList.add('active');
+        }
     }
 
-    .loop-progress-bar {
-        width: 0%;
-        height: 100%;
-        background-color: var(--accent-color);
-        transition: width 0.08s linear;
+    function checkLicense() {
+        const savedKey = localStorage.getItem('btk_license_key');
+        if (savedKey && VALID_LICENSES.includes(savedKey.trim().toUpperCase())) {
+            licenseOverlay.classList.add('hidden');
+            initApp();
+        } else {
+            licenseOverlay.classList.remove('hidden');
+        }
     }
 
-    /* Muda a cor da barra se a virada estiver engatada */
-    .loop-progress-bar.fill-armed {
-        background-color: var(--fill-color);
+    document.getElementById('btnActivate').addEventListener('click', () => {
+        const inputKey = licenseKeyInput.value.trim().toUpperCase();
+        if (VALID_LICENSES.includes(inputKey)) {
+            localStorage.setItem('btk_license_key', inputKey);
+            licenseOverlay.classList.add('hidden');
+            initApp();
+        } else {
+            document.getElementById('licenseMessage').textContent = 'Chave inválida.';
+        }
+    });
+
+    function loadPedalConfig() {
+        const saved = localStorage.getItem('btk_pedal_config');
+        if (saved) {
+            try {
+                pedalConfig = JSON.parse(saved);
+                document.getElementById('actionPedalA').value = pedalConfig['pageup'] || 'stop';
+                document.getElementById('actionPedalB').value = pedalConfig['pagedown'] || 'play';
+                document.getElementById('actionPedalC').value = pedalConfig[' '] || 'fill';
+                document.getElementById('actionPedalD').value = pedalConfig['enter'] || 'speed_up';
+            } catch(e){}
+        }
     }
-</style>
+
+    function savePedalConfig() {
+        pedalConfig = {
+            'pageup': document.getElementById('actionPedalA').value,
+            'pagedown': document.getElementById('actionPedalB').value,
+            ' ': document.getElementById('actionPedalC').value,
+            'enter': document.getElementById('actionPedalD').value
+        };
+        localStorage.setItem('btk_pedal_config', JSON.stringify(pedalConfig));
+    }
+
+    async function initApp() {
+        loadPedalConfig();
+        await loadSongs();
+    }
+
+    function fixDropboxUrl(url) {
+        if (!url) return '';
+        url = url.trim().replace(/\r/g, '');
+        if (url.includes('dropbox.com')) {
+            url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+            if (url.includes('dl=0')) url = url.replace('dl=0', 'raw=1');
+            else if (!url.includes('raw=1') && !url.includes('dl=1')) url += (url.includes('?') ? '&' : '?') + 'raw=1';
+        }
+        return url;
+    }
+
+    function extractBpmFromName(name) {
+        const match = name.match(/(\d+)\s*bpm/i);
+        return match ? parseInt(match[1]) : null;
+    }
+
+    async function loadSongs() {
+        try {
+            updateStatus('Buscando...', 'offline');
+            const response = await fetch(GOOGLE_SHEET_CSV_URL);
+            if (!response.ok) throw new Error('Falha de rede');
+            
+            const csvText = await response.text();
+            songsData = parseCSV(csvText);
+
+            localStorage.setItem('btk_songs_manifest', JSON.stringify(songsData));
+            updateStatus('Online', 'online');
+            toastMessage.textContent = 'Músicas atualizadas!';
+            await populateSelect(songsData);
+        } catch (error) {
+            const cached = localStorage.getItem('btk_songs_manifest');
+            if (cached) {
+                songsData = JSON.parse(cached);
+                updateStatus('Modo Offline', 'offline');
+                toastMessage.textContent = 'Modo Offline: Lista do cache.';
+                await populateSelect(songsData);
+            } else {
+                updateStatus('Erro', 'offline');
+            }
+        }
+    }
+
+    function parseCSV(text) {
+        const lines = text.split(/\r?\n/);
+        const parsed = [];
+        let instrumentNames = [];
+
+        for (let l = 0; l < lines.length; l++) {
+            let line = lines[l].trim();
+            if (!line) continue;
+
+            let parts = line.split(',').map(p => p.replace(/"/g, '').trim());
+
+            if (l === 0) {
+                instrumentNames = parts.slice(1);
+                continue;
+            }
+
+            const songName = parts[0];
+            if (!songName || songName.toLowerCase() === 'nome') continue;
+
+            let mainTracks = [];
+            let fillTracks = [];
+            let endingTracks = [];
+
+            for (let i = 1; i < parts.length; i++) {
+                const url = fixDropboxUrl(parts[i]);
+                if (url && url.startsWith('http')) {
+                    const trackName = instrumentNames[i - 1] || `Faixa ${i}`;
+                    
+                    if (trackName.toLowerCase().includes('_fim') || trackName.toLowerCase().includes('_final')) {
+                        endingTracks.push({ name: trackName, url: url });
+                    } else if (trackName.toLowerCase().includes('_vira') || trackName.toLowerCase().includes('_fill')) {
+                        fillTracks.push({ name: trackName, url: url });
+                    } else {
+                        mainTracks.push({ name: trackName, url: url });
+                    }
+                }
+            }
+
+            if (mainTracks.length > 0) {
+                const originalBpm = extractBpmFromName(songName);
+                parsed.push({ 
+                    name: songName, 
+                    tracks: mainTracks, 
+                    fillTracks: fillTracks, 
+                    endingTracks: endingTracks,
+                    originalBpm: originalBpm 
+                });
+            }
+        }
+        return parsed;
+    }
+
+    async function populateSelect(list) {
+        trackSelect.innerHTML = '<option value="">-- Selecione uma música --</option>';
+        list.forEach((song, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            const hasFill = song.fillTracks.length > 0 ? ' [🪘 Virada]' : '';
+            const hasFim = song.endingTracks.length > 0 ? ' [🏁 Fim]' : '';
+            opt.textContent = `🎵 ${song.name} (${song.tracks.length} faixas)${hasFill}${hasFim}`;
+            trackSelect.appendChild(opt);
+        });
+        trackSelect.disabled = false;
+        await updateSelectCacheIndicators();
+    }
+
+    async function updateSelectCacheIndicators() {
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            for (let i = 0; i < songsData.length; i++) {
+                const song = songsData[i];
+                let allCached = true;
+
+                for (const track of [...song.tracks, ...song.fillTracks, ...song.endingTracks]) {
+                    const match = await cache.match(track.url);
+                    if (!match) { allCached = false; break; }
+                }
+
+                const option = trackSelect.options[i + 1];
+                if (option) {
+                    const hasFill = song.fillTracks.length > 0 ? ' [🪘 Virada]' : '';
+                    const hasFim = song.endingTracks.length > 0 ? ' [🏁 Fim]' : '';
+                    option.textContent = allCached 
+                        ? `✅ ${song.name} (${song.tracks.length} faixas)${hasFill}${hasFim}`
+                        : `🎵 ${song.name} (${song.tracks.length} faixas)${hasFill}${hasFim}`;
+                }
+            }
+        } catch (e){}
+    }
+
+    async function getAudioBlobUrl(url) {
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            let response = await cache.match(url);
+
+            if (!response) {
+                toastMessage.textContent = 'Baixando áudio para o cache local...';
+                response = await fetch(url);
+                if (response.ok) cache.put(url, response.clone());
+            }
+
+            const blob = await response.blob();
+            const objUrl = URL.createObjectURL(blob);
+            objectUrls.push(objUrl);
+            return objUrl;
+        } catch (err) {
+            return url;
+        }
+    }
+
+    function waitForAudioReady(audio) {
+        return new Promise((resolve) => {
+            if (audio.readyState >= 3) resolve();
+            else {
+                audio.addEventListener('canplaythrough', resolve, { once: true });
+                setTimeout(resolve, 3500);
+            }
+        });
+    }
+
+    function applyPitchPreservation(audio) {
+        audio.preservesPitch = true;
+        audio.webkitPreservesPitch = true;
+        audio.mozPreservesPitch = true;
+    }
+
+    function updateSpeedDisplay() {
+        const percent = parseInt(speedSlider.value);
+        if (currentOriginalBpm) {
+            const calculatedBpm = Math.round(currentOriginalBpm * (percent / 100));
+            speedDisplay.textContent = `${calculatedBpm} BPM (${percent}%)`;
+        } else {
+            speedDisplay.textContent = `${percent}%`;
+        }
+    }
+
+    trackSelect.addEventListener('change', async (e) => {
+        stopAll();
+        clearCurrentAudioObjects();
+
+        const index = e.target.value;
+        if (index === '') {
+            btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true;
+            stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione uma música para carregar os canais.</div>';
+            return;
+        }
+
+        const selectedSong = songsData[index];
+        currentOriginalBpm = selectedSong.originalBpm;
+        updateSpeedDisplay();
+
+        btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true;
+        stemsContainer.innerHTML = '';
+        audioElements = []; fillAudioElements = []; endingAudioElements = [];
+
+        try {
+            // Loops Principais
+            for (let i = 0; i < selectedSong.tracks.length; i++) {
+                const track = selectedSong.tracks[i];
+                toastMessage.textContent = `Carregando ${track.name} (${i + 1}/${selectedSong.tracks.length})...`;
+                
+                const audioSource = await getAudioBlobUrl(track.url);
+                const audio = new Audio(audioSource);
+                audio.loop = true; audio.preload = 'auto'; audio.volume = 1;
+                applyPitchPreservation(audio);
+
+                await waitForAudioReady(audio);
+                audioElements.push(audio);
+
+                const row = document.createElement('div');
+                row.className = 'stem-row';
+
+                const title = document.createElement('span');
+                title.className = 'stem-title';
+                title.textContent = track.name;
+
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'btn-toggle on';
+                toggleBtn.textContent = 'ON';
+
+                toggleBtn.addEventListener('click', () => {
+                    if (audio.volume > 0) {
+                        audio.volume = 0; toggleBtn.textContent = 'OFF'; toggleBtn.className = 'btn-toggle off';
+                    } else {
+                        audio.volume = 1; toggleBtn.textContent = 'ON'; toggleBtn.className = 'btn-toggle on';
+                    }
+                });
+
+                row.appendChild(title); row.appendChild(toggleBtn);
+                stemsContainer.appendChild(row);
+            }
+
+            // Viradas
+            if (selectedSong.fillTracks.length > 0) {
+                for (let f = 0; f < selectedSong.fillTracks.length; f++) {
+                    const fillSource = await getAudioBlobUrl(selectedSong.fillTracks[f].url);
+                    const fillAudio = new Audio(fillSource);
+                    fillAudio.loop = false; fillAudio.preload = 'auto';
+                    applyPitchPreservation(fillAudio);
+                    await waitForAudioReady(fillAudio);
+                    fillAudioElements.push(fillAudio);
+                }
+                btnFill.disabled = false;
+            } else {
+                btnFill.disabled = true;
+            }
+
+            // Finalizações
+            if (selectedSong.endingTracks.length > 0) {
+                for (let e = 0; e < selectedSong.endingTracks.length; e++) {
+                    const endSource = await getAudioBlobUrl(selectedSong.endingTracks[e].url);
+                    const endAudio = new Audio(endSource);
+                    endAudio.loop = false; endAudio.preload = 'auto';
+                    applyPitchPreservation(endAudio);
+                    await waitForAudioReady(endAudio);
+                    endingAudioElements.push(endAudio);
+                }
+            }
+
+            btnPlay.disabled = false; btnStop.disabled = false;
+            toastMessage.textContent = `Pronto! ${selectedSong.name} carregado.`;
+            await updateSelectCacheIndicators();
+
+        } catch (err) {
+            toastMessage.textContent = 'Erro ao carregar canais.';
+        }
+    });
+
+    btnFill.addEventListener('click', () => {
+        if (!isPlaying || fillAudioElements.length === 0) return;
+
+        if (!isFillArmed) {
+            isFillArmed = true;
+            btnFill.classList.add('armed');
+            loopProgressBar.classList.add('armed-fill');
+            btnFill.textContent = '⏳ VIRADA AGENDADA...';
+            toastMessage.textContent = 'Virada agendada para o final do ciclo!';
+        } else {
+            isFillArmed = false;
+            btnFill.classList.remove('armed');
+            loopProgressBar.classList.remove('armed-fill');
+            btnFill.textContent = '🪘 VIRADA / FILL';
+            toastMessage.textContent = 'Virada cancelada.';
+        }
+    });
+
+    btnStop.addEventListener('click', () => {
+        if (isPlaying && endingAudioElements.length > 0 && !isEndingArmed) {
+            isEndingArmed = true;
+            btnStop.classList.add('armed');
+            loopProgressBar.classList.add('armed-ending');
+            btnStop.textContent = '⏳ FINALIZANDO...';
+            toastMessage.textContent = 'Finalização agendada para o final do ciclo!';
+        } else {
+            stopAll();
+        }
+    });
+
+    function playAll() {
+        if (audioElements.length === 0) return;
+        const masterTime = audioElements[0].currentTime;
+
+        audioElements.forEach(audio => {
+            audio.currentTime = masterTime;
+            audio.playbackRate = speedSlider.value / 100;
+            applyPitchPreservation(audio);
+            audio.play().catch(e => console.error(e));
+        });
+
+        isPlaying = true; btnPlay.textContent = 'PAUSE';
+        startSyncAndTimer();
+    }
+
+    function stopAll() {
+        audioElements.forEach(audio => { audio.pause(); audio.currentTime = 0; });
+        fillAudioElements.forEach(audio => { audio.pause(); audio.currentTime = 0; });
+        endingAudioElements.forEach(audio => { audio.pause(); audio.currentTime = 0; });
+
+        isPlaying = false; 
+        isFillArmed = false; isFillPlaying = false;
+        isEndingArmed = false; isEndingPlaying = false;
+
+        btnFill.classList.remove('armed'); btnFill.textContent = '🪘 VIRADA / FILL';
+        btnStop.classList.remove('armed'); btnStop.textContent = 'STOP';
+        loopProgressBar.className = 'loop-progress-bar';
+        loopProgressBar.style.width = '0%';
+
+        btnPlay.textContent = 'PLAY';
+        stopSyncAndTimer();
+        timerDisplay.textContent = '00:00.0'; lastMasterTime = 0;
+    }
+
+    btnPlay.addEventListener('click', () => { if (!isPlaying) playAll(); else pauseAll(); });
+
+    speedSlider.addEventListener('input', (e) => {
+        updateSpeedDisplay();
+        const rate = parseInt(e.target.value) / 100;
+        audioElements.forEach(audio => { audio.playbackRate = rate; applyPitchPreservation(audio); });
+        fillAudioElements.forEach(audio => { audio.playbackRate = rate; applyPitchPreservation(audio); });
+        endingAudioElements.forEach(audio => { audio.playbackRate = rate; applyPitchPreservation(audio); });
+    });
+
+    // MONITOR DE TEMPO E BARRA CÍCLICA
+    function startSyncAndTimer() {
+        stopSyncAndTimer();
+        syncInterval = setInterval(() => {
+            if (!isPlaying || audioElements.length === 0) return;
+            const master = audioElements[0];
+
+            // Atualiza a Barra de Progresso Cíclica
+            if (master.duration) {
+                const progressPercent = (master.currentTime / master.duration) * 100;
+                loopProgressBar.style.width = `${progressPercent}%`;
+            }
+
+            // Detecta o final do ciclo do loop
+            if (master.currentTime < lastMasterTime - 0.5) {
+                if (isEndingArmed && !isEndingPlaying) {
+                    dispararFinalizacao();
+                } else if (isFillArmed && !isFillPlaying) {
+                    dispararVirada();
+                } else {
+                    audioElements.forEach(a => a.currentTime = master.currentTime);
+                }
+            }
+            lastMasterTime = master.currentTime;
+
+            const current = isEndingPlaying ? endingAudioElements[0].currentTime : (isFillPlaying ? fillAudioElements[0].currentTime : master.currentTime);
+            const mins = Math.floor(current / 60).toString().padStart(2, '0');
+            const secs = Math.floor(current % 60).toString().padStart(2, '0');
+            const ms = Math.floor((current % 1) * 10);
+            timerDisplay.textContent = `${mins}:${secs}.${ms}`;
+        }, 80);
+    }
+
+    function dispararVirada() {
+        isFillArmed = false; isFillPlaying = true;
+        btnFill.classList.remove('armed'); 
+        loopProgressBar.classList.remove('armed-fill');
+        btnFill.textContent = '🔥 TOCANDO VIRADA...';
+
+        audioElements.forEach(a => a.pause());
+
+        fillAudioElements.forEach(fill => {
+            fill.currentTime = 0;
+            fill.playbackRate = speedSlider.value / 100;
+            applyPitchPreservation(fill);
+            fill.play().catch(e => console.error(e));
+        });
+
+        const masterFill = fillAudioElements[0];
+        const onFillEnd = () => {
+            isFillPlaying = false;
+            btnFill.textContent = '🪘 VIRADA / FILL';
+            audioElements.forEach(a => { a.currentTime = 0; a.play().catch(e => console.error(e)); });
+            masterFill.removeEventListener('ended', onFillEnd);
+        };
+        masterFill.addEventListener('ended', onFillEnd);
+    }
+
+    function dispararFinalizacao() {
+        isEndingArmed = false; isEndingPlaying = true;
+        btnStop.classList.remove('armed');
+        loopProgressBar.classList.remove('armed-ending');
+
+        audioElements.forEach(a => a.pause());
+
+        endingAudioElements.forEach(end => {
+            end.currentTime = 0;
+            end.playbackRate = speedSlider.value / 100;
+            applyPitchPreservation(end);
+            end.play().catch(e => console.error(e));
+        });
+
+        const masterEnding = endingAudioElements[0];
+        const onEndingEnd = () => {
+            stopAll();
+            masterEnding.removeEventListener('ended', onEndingEnd);
+        };
+        masterEnding.addEventListener('ended', onEndingEnd);
+    }
+
+    function stopSyncAndTimer() { if (syncInterval) clearInterval(syncInterval); }
+    function clearCurrentAudioObjects() { objectUrls.forEach(url => URL.revokeObjectURL(url)); objectUrls = []; }
+
+    btnClearCache.addEventListener('click', async () => {
+        const selectedIndex = trackSelect.value;
+        if (selectedIndex === '') { toastMessage.textContent = 'Selecione uma música.'; return; }
+
+        stopAll(); clearCurrentAudioObjects();
+        const selectedSong = songsData[selectedIndex];
+        
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            let removedCount = 0;
+            for (const track of [...selectedSong.tracks, ...selectedSong.fillTracks, ...selectedSong.endingTracks]) {
+                if (await cache.delete(track.url)) removedCount++;
+            }
+
+            audioElements = []; fillAudioElements = []; endingAudioElements = [];
+            stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione uma música para carregar os canais.</div>';
+            btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true;
+            trackSelect.value = '';
+
+            await updateSelectCacheIndicators();
+            toastMessage.textContent = `Cache de "${selectedSong.name}" limpo! (${removedCount} faixas removidas)`;
+        } catch (e){}
+    });
+
+    function updateStatus(text, type) {
+        statusBadge.textContent = text;
+        statusBadge.className = `status-badge ${type}`;
+    }
+
+    function triggerAction(actionName) {
+        switch (actionName) {
+            case 'play': if (!btnPlay.disabled) btnPlay.click(); break;
+            case 'fill': if (!btnFill.disabled) btnFill.click(); break;
+            case 'stop': if (!btnStop.disabled) btnStop.click(); break;
+            case 'speed_up':
+                speedSlider.value = Math.min(150, parseInt(speedSlider.value) + 5);
+                speedSlider.dispatchEvent(new Event('input'));
+                break;
+            case 'speed_down':
+                speedSlider.value = Math.max(50, parseInt(speedSlider.value) - 5);
+                speedSlider.dispatchEvent(new Event('input'));
+                break;
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (document.activeElement === licenseKeyInput) return;
+        if (document.activeElement === trackSelect) trackSelect.blur();
+
+        const rawKey = e.key;
+        const key = rawKey.toLowerCase();
+
+        const testBox = document.getElementById('testPedalBox');
+        testBox.classList.add('active');
+        testBox.innerHTML = `✅ SINAL RECEBIDO! Tecla enviada pelo pedal: <b>"${rawKey}"</b> (code: ${e.code})`;
+        setTimeout(() => testBox.classList.remove('active'), 1200);
+
+        if ([' ', 'pagedown', 'pageup', 'arrowup', 'arrowdown'].includes(key)) {
+            e.preventDefault();
+        }
+
+        if (pedalConfig[key]) {
+            triggerAction(pedalConfig[key]);
+            return;
+        }
+
+        switch (key) {
+            case ' ':
+            case 'enter': triggerAction('play'); break;
+            case 'escape': triggerAction('stop'); break;
+            case 'v': triggerAction('fill'); break;
+        }
+    });
+
+    checkLicense();
+</script>
+</body>
+</html>
