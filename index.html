@@ -302,7 +302,7 @@
 
     <div id="toastMessage" class="toast">Aguardando ativação...</div>
 
-    <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudios do Cache</button>
+    <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudio Selecionado do Cache</button>
 </div>
 
 <script>
@@ -732,18 +732,37 @@
         objectUrls = [];
     }
 
+    // LIMPEZA SELETIVA DE CACHE (Limpa apenas a música selecionada sem apagar a licença)
     btnClearCache.addEventListener('click', async () => {
+        const selectedIndex = trackSelect.value;
+        if (selectedIndex === '') {
+            toastMessage.textContent = 'Selecione uma música para limpar do cache.';
+            return;
+        }
+
         stopAll();
         clearCurrentAudioObjects();
-        const deleted = await caches.delete(CACHE_NAME);
-        localStorage.removeItem('btk_songs_manifest');
-        localStorage.removeItem('btk_license_key');
-        if (deleted) {
-            toastMessage.textContent = 'Cache e licença removidos!';
-        } else {
-            toastMessage.textContent = 'Licença removida.';
+
+        const selectedSong = songsData[selectedIndex];
+        
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            let removedCount = 0;
+
+            for (const track of selectedSong.tracks) {
+                const deleted = await cache.delete(track.url);
+                if (deleted) removedCount++;
+            }
+
+            toastMessage.textContent = `Cache de "${selectedSong.name}" limpo! (${removedCount} faixas removidas)`;
+            
+            // Recarrega os canais da música atual se ela ainda estiver selecionada
+            trackSelect.dispatchEvent(new Event('change'));
+
+        } catch (e) {
+            console.error('Erro ao limpar cache da faixa:', e);
+            toastMessage.textContent = 'Erro ao limpar cache da música.';
         }
-        setTimeout(() => location.reload(), 1000);
     });
 
     function updateStatus(text, type) {
