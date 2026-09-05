@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BTK - Multi-Track Studio</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --accent-color: #ff9800;
+            --fill-color: #e91e63;
+            --text-color: #ffffff;
+            --subtext-color: #b0b0b0;
+            --error-color: #f44336;
+            --success-color: #4caf50;
+            --btn-off: #424242;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            position: relative;
+        }
+
+        @media (max-width: 500px) {
+            body { padding: 0; }
+            .container {
+                max-width: 100%;
+                min-height: 100vh;
+                border-radius: 0;
+                box-shadow: none;
+                justify-content: space-between;
+            }
+        }
+
+        .license-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(18, 18, 18, 0.96);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            text-align: center;
+            gap: 16px;
+        }
+
+        .license-overlay.hidden { display: none; }
+
+        .license-input {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.1rem;
+            text-align: center;
+            letter-spacing: 2px;
+            background: #2a2a2a;
+            color: var(--text-color);
+            border: 2px solid #444;
+            border-radius: 12px;
+            outline: none;
+            text-transform: uppercase;
+        }
+
+        .license-input:focus { border-color: var(--accent-color); }
+
+        .btn-activate {
+            width: 100%;
+            background: var(--accent-color);
+            color: #000;
+            font-weight: bold;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+            padding-bottom: 12px;
+        }
+
+        .header h2 { margin: 0; font-size: 1.3rem; }
+
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: #333;
+            color: var(--subtext-color);
+        }
+
+        .status-badge.online { background: rgba(76, 175, 80, 0.2); color: var(--success-color); }
+        .status-badge.offline { background: rgba(244, 67, 54, 0.2); color: var(--error-color); }
+
+        select {
+            width: 100%;
+            padding: 16px;
+            font-size: 1rem;
+            background: #2a2a2a;
+            color: var(--text-color);
+            border: 2px solid #444;
+            border-radius: 12px;
+            outline: none;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        select:focus { border-color: var(--accent-color); }
+
+        .timer-box {
+            text-align: center;
+            background: #181818;
+            padding: 14px;
+            border-radius: 12px;
+        }
+
+        .timer-label { font-size: 0.8rem; color: var(--subtext-color); margin-bottom: 4px; }
+        .timer-display { font-size: 2.5rem; font-weight: bold; font-family: monospace; color: var(--accent-color); }
+
+        .speed-control {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .speed-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 16px;
+            border-radius: 8px;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .player-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        button {
+            padding: 18px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        button:active:not(:disabled) { transform: scale(0.98); }
+
+        .btn-play { background: var(--accent-color); color: #000; }
+        .btn-stop { background: #333; color: var(--text-color); }
+        
+        /* Botão de Virada Especial */
+        .btn-fill {
+            background: var(--fill-color);
+            color: #fff;
+            grid-column: span 2;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-fill.armed {
+            animation: pulse 0.8s infinite alternate;
+            background: #ff5252;
+        }
+
+        @keyframes pulse {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0.7; transform: scale(0.99); }
+        }
+
+        .btn-clear-cache {
+            background: transparent;
+            color: var(--subtext-color);
+            border: 1px solid #444;
+            padding: 10px 12px;
+            font-size: 0.8rem;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .stems-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #181818;
+            padding: 12px;
+            border-radius: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .stem-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #2a2a2a;
+            padding: 10px 14px;
+            border-radius: 8px;
+        }
+
+        .stem-title { font-size: 0.9rem; font-weight: bold; }
+
+        .btn-toggle {
+            padding: 10px 18px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            min-width: 75px;
+        }
+
+        .btn-toggle.on { background: var(--success-color); color: #fff; }
+        .btn-toggle.off { background: var(--btn-off); color: var(--subtext-color); }
+
+        .toast {
+            font-size: 0.85rem;
+            text-align: center;
+            color: var(--subtext-color);
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="licenseOverlay" class="license-overlay">
+        <h2>🔑 Ativação BTK</h2>
+        <p style="color: var(--subtext-color); font-size: 0.9rem; margin: 0;">Insira sua chave de licença para liberar o aplicativo.</p>
+        <input type="text" id="licenseKeyInput" class="license-input" placeholder="XXXX-XXXX-XXXX" autocomplete="off">
+        <button id="btnActivate" class="btn-activate">ATIVAR LICENÇA</button>
+        <div id="licenseMessage" style="color: var(--error-color); font-size: 0.85rem; min-height: 18px;"></div>
+    </div>
+
+    <div class="header">
+        <h2>🥁 BTK - Percussão 🪘</h2>
+        <span id="status" class="status-badge">Detectando...</span>
+    </div>
+
+    <div>
+        <select id="trackSelect" disabled>
+            <option>Carregando lista...</option>
+        </select>
+    </div>
+
+    <div class="timer-box">
+        <div class="timer-label">⏱️ TEMPO DECORRIDO (LOOP)</div>
+        <div id="timerDisplay" class="timer-display">00:00.0</div>
+    </div>
+
+    <div class="speed-control">
+        <div class="speed-header">
+            <span>⏱️ VELOCIDADE</span>
+            <span id="speedDisplay">100%</span>
+        </div>
+        <input type="range" id="speedSlider" min="50" max="150" value="100" step="5">
+    </div>
+
+    <div class="player-controls">
+        <button id="btnPlay" class="btn-play" disabled>PLAY</button>
+        <button id="btnStop" class="btn-stop" disabled>STOP</button>
+        <button id="btnFill" class="btn-fill" disabled>🪘 VIRADA (Tecla V)</button>
+    </div>
+
+    <div id="stemsContainer" class="stems-container">
+        <div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">
+            Selecione uma música para carregar os canais.
+        </div>
+    </div>
+
+    <div id="toastMessage" class="toast">Aguardando ativação...</div>
+
+    <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudio Selecionado do Cache</button>
+</div>
+
+<script>
+    const VALID_LICENSES = ['BTK-2026-VIP', 'PERCUSSAO-100', 'SHOW-BTK-88'];
+    const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
+    const CACHE_NAME = 'btk-audio-cache-v13';
+
+    const licenseOverlay = document.getElementById('licenseOverlay');
+    const licenseKeyInput = document.getElementById('licenseKeyInput');
+    const btnActivate = document.getElementById('btnActivate');
+
+    const trackSelect = document.getElementById('trackSelect');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedDisplay = document.getElementById('speedDisplay');
+    const btnPlay = document.getElementById('btnPlay');
+    const btnStop = document.getElementById('btnStop');
+    const btnFill = document.getElementById('btnFill');
+    const btnClearCache = document.getElementById('btnClearCache');
+    const stemsContainer = document.getElementById('stemsContainer');
+    const statusBadge = document.getElementById('status');
+    const toastMessage = document.getElementById('toastMessage');
+
+    let songsData = [];
+    let audioElements = [];       // Áudios do Loop principal
+    let fillAudioElements = [];   // Áudios das Viradas (_vira)
+    let objectUrls = [];
+    let isPlaying = false;
+    let isFillArmed = false;      // Indica se a virada foi solicitada
+    let isFillPlaying = false;    // Indica se a virada está rolando
+    let syncInterval = null;
+    let lastMasterTime = 0;
+    let wakeLock = null;
+    let currentOriginalBpm = null;
+    let instrumentNames = [];
+
+    function checkLicense() {
+        const savedKey = localStorage.getItem('btk_license_key');
+        if (savedKey && VALID_LICENSES.includes(savedKey.trim().toUpperCase())) {
+            licenseOverlay.classList.add('hidden');
+            initApp();
+        } else {
+            licenseOverlay.classList.remove('hidden');
+        }
+    }
+
+    btnActivate.addEventListener('click', () => {
+        const inputKey = licenseKeyInput.value.trim().toUpperCase();
+        if (VALID_LICENSES.includes(inputKey)) {
+            localStorage.setItem('btk_license_key', inputKey);
+            licenseOverlay.classList.add('hidden');
+            initApp();
+        } else {
+            document.getElementById('licenseMessage').textContent = 'Chave inválida.';
+        }
+    });
+
+    async function requestWakeLock() {
+        try {
+            if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+        } catch (err) { console.warn('Wake Lock indisponível:', err); }
+    }
+
+    function releaseWakeLock() {
+        if (wakeLock !== null) { wakeLock.release().then(() => { wakeLock = null; }); }
+    }
+
+    function fixDropboxUrl(url) {
+        if (!url) return '';
+        url = url.trim().replace(/\r/g, '');
+        if (url.includes('dropbox.com')) {
+            url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+            if (url.includes('dl=0')) url = url.replace('dl=0', 'raw=1');
+            else if (!url.includes('raw=1') && !url.includes('dl=1')) url += (url.includes('?') ? '&' : '?') + 'raw=1';
+        }
+        return url;
+    }
+
+    function extractBpmFromName(name) {
+        const match = name.match(/(\d+)\s*bpm/i);
+        return match ? parseInt(match[1]) : null;
+    }
+
+    async function initApp() { await loadSongs(); }
+
+    async function loadSongs() {
+        try {
+            updateStatus('Buscando...', 'offline');
+            const response = await fetch(GOOGLE_SHEET_CSV_URL);
+            if (!response.ok) throw new Error('Falha de rede');
+            
+            const csvText = await response.text();
+            songsData = parseCSV(csvText);
+
+            localStorage.setItem('btk_songs_manifest', JSON.stringify(songsData));
+            updateStatus('Online', 'online');
+            toastMessage.textContent = 'Músicas atualizadas!';
+            await populateSelect(songsData);
+        } catch (error) {
+            const cached = localStorage.getItem('btk_songs_manifest');
+            if (cached) {
+                songsData = JSON.parse(cached);
+                updateStatus('Modo Offline', 'offline');
+                toastMessage.textContent = 'Modo Offline: Lista do cache.';
+                await populateSelect(songsData);
+            } else {
+                updateStatus('Erro', 'offline');
+                toastMessage.textContent = 'Erro ao conectar à planilha.';
+            }
+        }
+    }
+
+    function parseCSV(text) {
+        const lines = text.split(/\r?\n/);
+        const parsed = [];
+        instrumentNames = [];
+
+        for (let l = 0; l < lines.length; l++) {
+            let line = lines[l].trim();
+            if (!line) continue;
+
+            let parts = line.split(',').map(p => p.replace(/"/g, '').trim());
+
+            if (l === 0) {
+                instrumentNames = parts.slice(1);
+                continue;
+            }
+
+            const songName = parts[0];
+            if (!songName || songName.toLowerCase() === 'nome') continue;
+
+            let mainTracks = [];
+            let fillTracks = [];
+
+            for (let i = 1; i < parts.length; i++) {
+                const url = fixDropboxUrl(parts[i]);
+                if (url && url.startsWith('http')) {
+                    const trackName = instrumentNames[i - 1] || `Faixa ${i}`;
+                    
+                    // SE TIVER _VIRA NO NOME, SEPARA COMO TRILHA DE VIRADA
+                    if (trackName.toLowerCase().includes('_vira') || trackName.toLowerCase().includes('_fill')) {
+                        fillTracks.push({ name: trackName, url: url });
+                    } else {
+                        mainTracks.push({ name: trackName, url: url });
+                    }
+                }
+            }
+
+            if (mainTracks.length > 0) {
+                const originalBpm = extractBpmFromName(songName);
+                parsed.push({ name: songName, tracks: mainTracks, fillTracks: fillTracks, originalBpm: originalBpm });
+            }
+        }
+        return parsed;
+    }
+
+    async function populateSelect(list) {
+        trackSelect.innerHTML = '<option value="">-- Selecione uma música --</option>';
+        list.forEach((song, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            const hasFill = song.fillTracks.length > 0 ? ' [🪘 Virada Ok]' : '';
+            opt.textContent = `🎵 ${song.name} (${song.tracks.length} faixas)${hasFill}`;
+            trackSelect.appendChild(opt);
+        });
+        trackSelect.disabled = false;
+        await updateSelectCacheIndicators();
+    }
+
+    async function updateSelectCacheIndicators() {
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            for (let i = 0; i < songsData.length; i++) {
+                const song = songsData[i];
+                let allCached = true;
+
+                for (const track of [...song.tracks, ...song.fillTracks]) {
+                    const match = await cache.match(track.url);
+                    if (!match) { allCached = false; break; }
+                }
+
+                const option = trackSelect.options[i + 1];
+                if (option) {
+                    const hasFill = song.fillTracks.length > 0 ? ' [🪘 Virada Ok]' : '';
+                    option.textContent = allCached 
+                        ? `✅ ${song.name} (${song.tracks.length} faixas)${hasFill}`
+                        : `🎵 ${song.name} (${song.tracks.length} faixas)${hasFill}`;
+                }
+            }
+        } catch (e) { console.warn('Erro indicadores cache:', e); }
+    }
+
+    async function getAudioBlobUrl(url) {
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            let response = await cache.match(url);
+
+            if (!response) {
+                toastMessage.textContent = 'Baixando áudio para o cache local...';
+                response = await fetch(url);
+                if (response.ok) cache.put(url, response.clone());
+                else throw new Error('Falha no download');
+            }
+
+            const blob = await response.blob();
+            const objUrl = URL.createObjectURL(blob);
+            objectUrls.push(objUrl);
+            return objUrl;
+        } catch (err) {
+            return url;
+        }
+    }
+
+    function waitForAudioReady(audio) {
+        return new Promise((resolve) => {
+            if (audio.readyState >= 3) resolve();
+            else {
+                audio.addEventListener('canplaythrough', resolve, { once: true });
+                setTimeout(resolve, 3500);
+            }
+        });
+    }
+
+    function applyPitchPreservation(audio) {
+        audio.preservesPitch = true;
+        audio.webkitPreservesPitch = true;
+        audio.mozPreservesPitch = true;
+    }
+
+    function updateSpeedDisplay() {
+        const percent = parseInt(speedSlider.value);
+        if (currentOriginalBpm) {
+            const calculatedBpm = Math.round(currentOriginalBpm * (percent / 100));
+            speedDisplay.textContent = `${calculatedBpm} BPM (${percent}%)`;
+        } else {
+            speedDisplay.textContent = `${percent}%`;
+        }
+    }
+
+    trackSelect.addEventListener('change', async (e) => {
+        stopAll();
+        clearCurrentAudioObjects();
+
+        const index = e.target.value;
+        if (index === '') {
+            btnPlay.disabled = true;
+            btnStop.disabled = true;
+            btnFill.disabled = true;
+            stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione uma música para carregar os canais.</div>';
+            return;
+        }
+
+        const selectedSong = songsData[index];
+        currentOriginalBpm = selectedSong.originalBpm;
+        updateSpeedDisplay();
+
+        btnPlay.disabled = true;
+        btnStop.disabled = true;
+        btnFill.disabled = true;
+        stemsContainer.innerHTML = '';
+        audioElements = [];
+        fillAudioElements = [];
+
+        try {
+            // 1. CARREGA AS FAIXAS PRINCIPAIS DO LOOP
+            for (let i = 0; i < selectedSong.tracks.length; i++) {
+                const track = selectedSong.tracks[i];
+                toastMessage.textContent = `Carregando ${track.name} (${i + 1}/${selectedSong.tracks.length})...`;
+                
+                const audioSource = await getAudioBlobUrl(track.url);
+                const audio = new Audio(audioSource);
+                audio.loop = true;
+                audio.preload = 'auto';
+                audio.volume = 1;
+                applyPitchPreservation(audio);
+
+                await waitForAudioReady(audio);
+                audioElements.push(audio);
+
+                const row = document.createElement('div');
+                row.className = 'stem-row';
+
+                const title = document.createElement('span');
+                title.className = 'stem-title';
+                title.textContent = track.name;
+
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'btn-toggle on';
+                toggleBtn.textContent = 'ON';
+
+                toggleBtn.addEventListener('click', () => {
+                    if (audio.volume > 0) {
+                        audio.volume = 0;
+                        toggleBtn.textContent = 'OFF';
+                        toggleBtn.className = 'btn-toggle off';
+                    } else {
+                        audio.volume = 1;
+                        toggleBtn.textContent = 'ON';
+                        toggleBtn.className = 'btn-toggle on';
+                    }
+                });
+
+                row.appendChild(title);
+                row.appendChild(toggleBtn);
+                stemsContainer.appendChild(row);
+            }
+
+            // 2. CARREGA AS FAIXAS DE VIRADA EM SEGUNDO PLANO (OCULTAS)
+            if (selectedSong.fillTracks.length > 0) {
+                toastMessage.textContent = 'Carregando arquivos de virada...';
+                for (let f = 0; f < selectedSong.fillTracks.length; f++) {
+                    const fillTrack = selectedSong.fillTracks[f];
+                    const fillSource = await getAudioBlobUrl(fillTrack.url);
+                    const fillAudio = new Audio(fillSource);
+                    fillAudio.loop = false; // Virada toca uma vez só
+                    fillAudio.preload = 'auto';
+                    applyPitchPreservation(fillAudio);
+                    await waitForAudioReady(fillAudio);
+                    fillAudioElements.push(fillAudio);
+                }
+                btnFill.disabled = false;
+            } else {
+                btnFill.disabled = true;
+            }
+
+            btnPlay.disabled = false;
+            btnStop.disabled = false;
+            toastMessage.textContent = `Pronto! ${selectedSong.name} carregado.`;
+            await updateSelectCacheIndicators();
+
+        } catch (err) {
+            console.error(err);
+            toastMessage.textContent = 'Erro ao carregar os canais de áudio.';
+        }
+    });
+
+    // LÓGICA DE SOLICITAÇÃO DA VIRADA
+    btnFill.addEventListener('click', () => {
+        if (!isPlaying || fillAudioElements.length === 0) return;
+
+        if (!isFillArmed) {
+            isFillArmed = true;
+            btnFill.classList.add('armed');
+            btnFill.textContent = '⏳ VIRADA AGENDADA...';
+            toastMessage.textContent = 'Virada agendada para o final do ciclo!';
+        } else {
+            isFillArmed = false;
+            btnFill.classList.remove('armed');
+            btnFill.textContent = '🪘 VIRADA (Tecla V)';
+            toastMessage.textContent = 'Virada cancelada.';
+        }
+    });
+
+    function playAll() {
+        if (audioElements.length === 0) return;
+
+        const masterTime = audioElements[0].currentTime;
+
+        audioElements.forEach(audio => {
+            audio.currentTime = masterTime;
+            audio.playbackRate = speedSlider.value / 100;
+            applyPitchPreservation(audio);
+            audio.play().catch(e => console.error(e));
+        });
+
+        isPlaying = true;
+        btnPlay.textContent = 'PAUSE';
+        requestWakeLock();
+        startSyncAndTimer();
+    }
+
+    function pauseAll() {
+        audioElements.forEach(audio => audio.pause());
+        fillAudioElements.forEach(audio => audio.pause());
+        isPlaying = false;
+        btnPlay.textContent = 'PLAY';
+        releaseWakeLock();
+        stopSyncAndTimer();
+    }
+
+    function stopAll() {
+        audioElements.forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0;
+        });
+        fillAudioElements.forEach(audio => {
+            audio.pause();
+            audio.currentTime = 0;
+        });
+        isPlaying = false;
+        isFillArmed = false;
+        isFillPlaying = false;
+        btnFill.classList.remove('armed');
+        btnFill.textContent = '🪘 VIRADA (Tecla V)';
+        btnPlay.textContent = 'PLAY';
+        releaseWakeLock();
+        stopSyncAndTimer();
+        timerDisplay.textContent = '00:00.0';
+        lastMasterTime = 0;
+    }
+
+    btnPlay.addEventListener('click', () => {
+        if (!isPlaying) playAll();
+        else pauseAll();
+    });
+
+    btnStop.addEventListener('click', () => stopAll());
+
+    speedSlider.addEventListener('input', (e) => {
+        updateSpeedDisplay();
+        const rate = parseInt(e.target.value) / 100;
+
+        audioElements.forEach(audio => {
+            audio.playbackRate = rate;
+            applyPitchPreservation(audio);
+        });
+        fillAudioElements.forEach(audio => {
+            audio.playbackRate = rate;
+            applyPitchPreservation(audio);
+        });
+    });
+
+    // MONITOR DE TEMPO E DISPARO DA VIRADA
+    function startSyncAndTimer() {
+        stopSyncAndTimer();
+        syncInterval = setInterval(() => {
+            if (!isPlaying || audioElements.length === 0) return;
+
+            const master = audioElements[0];
+
+            // DETECTA SE O LOOP PRINCIPAL REINICIOU
+            if (master.currentTime < lastMasterTime - 0.5) {
+                
+                // SE A VIRADA FOI SOLICITADA, TROCA PARA OS ÁUDIOS DE VIRADA
+                if (isFillArmed && !isFillPlaying) {
+                    dispararVirada();
+                } else {
+                    audioElements.forEach(a => a.currentTime = master.currentTime);
+                }
+            }
+            lastMasterTime = master.currentTime;
+
+            const current = isFillPlaying ? fillAudioElements[0].currentTime : master.currentTime;
+            const mins = Math.floor(current / 60).toString().padStart(2, '0');
+            const secs = Math.floor(current % 60).toString().padStart(2, '0');
+            const ms = Math.floor((current % 1) * 10);
+            timerDisplay.textContent = `${mins}:${secs}.${ms}`;
+        }, 80);
+    }
+
+    function dispararVirada() {
+        isFillArmed = false;
+        isFillPlaying = true;
+
+        btnFill.classList.remove('armed');
+        btnFill.textContent = '🔥 TOCANDO VIRADA...';
+
+        // 1. PAUSA O LOOP PRINCIPAL
+        audioElements.forEach(a => a.pause());
+
+        // 2. TOCA AS FAIXAS DE VIRADA
+        fillAudioElements.forEach(fill => {
+            fill.currentTime = 0;
+            fill.playbackRate = speedSlider.value / 100;
+            applyPitchPreservation(fill);
+            fill.play().catch(e => console.error(e));
+        });
+
+        // 3. QUANDO A VIRADA TERMINAR, VOLTA PRO LOOP PRINCIPAL
+        const masterFill = fillAudioElements[0];
+        const onFillEnd = () => {
+            isFillPlaying = false;
+            btnFill.textContent = '🪘 VIRADA (Tecla V)';
+
+            // VOLTA O LOOP PRINCIPAL DO INÍCIO (0:00)
+            audioElements.forEach(a => {
+                a.currentTime = 0;
+                a.play().catch(e => console.error(e));
+            });
+            masterFill.removeEventListener('ended', onFillEnd);
+        };
+
+        masterFill.addEventListener('ended', onFillEnd);
+    }
+
+    function stopSyncAndTimer() {
+        if (syncInterval) clearInterval(syncInterval);
+    }
+
+    function clearCurrentAudioObjects() {
+        objectUrls.forEach(url => URL.revokeObjectURL(url));
+        objectUrls = [];
+    }
+
+    btnClearCache.addEventListener('click', async () => {
+        const selectedIndex = trackSelect.value;
+        if (selectedIndex === '') {
+            toastMessage.textContent = 'Selecione uma música para limpar do cache.';
+            return;
+        }
+
+        stopAll();
+        clearCurrentAudioObjects();
+
+        const selectedSong = songsData[selectedIndex];
+        
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            let removedCount = 0;
+
+            for (const track of [...selectedSong.tracks, ...selectedSong.fillTracks]) {
+                const deleted = await cache.delete(track.url);
+                if (deleted) removedCount++;
+            }
+
+            audioElements = [];
+            fillAudioElements = [];
+            stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione uma música para carregar os canais.</div>';
+            btnPlay.disabled = true;
+            btnStop.disabled = true;
+            btnFill.disabled = true;
+            trackSelect.value = '';
+
+            await updateSelectCacheIndicators();
+            toastMessage.textContent = `Cache de "${selectedSong.name}" limpo! (${removedCount} faixas removidas)`;
+
+        } catch (e) {
+            console.error(e);
+            toastMessage.textContent = 'Erro ao limpar cache.';
+        }
+    });
+
+    function updateStatus(text, type) {
+        statusBadge.textContent = text;
+        statusBadge.className = `status-badge ${type}`;
+    }
+
+    // MAPEAMENTO DE TECLAS / PEDAL
+    document.addEventListener('keydown', (e) => {
+        if (document.activeElement === trackSelect || document.activeElement === licenseKeyInput) {
+            if (e.key === 'Enter' && document.activeElement === licenseKeyInput) btnActivate.click();
+            return;
+        }
+
+        const key = e.key.toLowerCase();
+
+        if ([' ', 'PageDown', 'PageUp', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
+
+        switch (key) {
+            case ' ':
+            case 'enter':
+            case 'pagedown':
+                if (!btnPlay.disabled) btnPlay.click();
+                break;
+            case 'escape':
+            case 'pageup':
+                if (!btnStop.disabled) btnStop.click();
+                break;
+            case 'v': // TECLA V DISPARA A VIRADA
+                if (!btnFill.disabled) btnFill.click();
+                break;
+            case 'arrowup':
+                speedSlider.value = Math.min(150, parseInt(speedSlider.value) + 5);
+                speedSlider.dispatchEvent(new Event('input'));
+                break;
+            case 'arrowdown':
+                speedSlider.value = Math.max(50, parseInt(speedSlider.value) - 5);
+                speedSlider.dispatchEvent(new Event('input'));
+                break;
+            default:
+                if (!isNaN(key) && parseInt(key) > 0) {
+                    const idx = parseInt(key) - 1;
+                    const toggleBtns = stemsContainer.querySelectorAll('.btn-toggle');
+                    if (toggleBtns[idx]) toggleBtns[idx].click();
+                }
+                break;
+        }
+    });
+
+    checkLicense();
+</script>
+</body>
+</html>
