@@ -136,47 +136,62 @@
             outline: none; cursor: pointer;
         }
 
-        /* Display do Timer e Barra de Progresso Cíclica */
+        /* TIMER COM PROGRESSO CIRCULAR */
         .timer-box {
             text-align: center; background: #181818;
-            padding: 16px; border-radius: 12px;
-            display: flex; flex-direction: column; gap: 10px;
-        }
-
-        .timer-label { font-size: 0.8rem; color: var(--subtext-color); }
-        .timer-display { font-size: 2.2rem; font-weight: bold; font-family: monospace; color: var(--accent-color); }
-
-        .loop-progress-container {
-            width: 100%;
-            height: 12px;
-            background-color: #2a2a2a;
-            border-radius: 6px;
-            overflow: hidden;
-            border: 1px solid #444;
+            padding: 18px; border-radius: 16px;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
             position: relative;
         }
 
-        .loop-progress-bar {
-            width: 0%;
+        .circle-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .circle-svg {
+            transform: rotate(-90deg);
+            width: 100%;
             height: 100%;
-            background-color: var(--accent-color);
-            transition: width 0.08s linear, background-color 0.3s;
         }
 
-        .loop-progress-bar.armed-fill {
-            background-color: var(--fill-color);
-            animation: pulse-bar 0.8s infinite alternate;
+        .circle-bg {
+            fill: none;
+            stroke: #2a2a2a;
+            stroke-width: 10;
         }
 
-        .loop-progress-bar.armed-ending {
-            background-color: var(--ending-color);
-            animation: pulse-bar 0.8s infinite alternate;
+        .circle-progress {
+            fill: none;
+            stroke: var(--accent-color);
+            stroke-width: 10;
+            stroke-dasharray: 440;
+            stroke-dashoffset: 440;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.08s linear, stroke 0.3s;
         }
 
-        @keyframes pulse-bar {
-            from { opacity: 1; }
-            to { opacity: 0.6; }
+        .circle-progress.armed-fill, .circle-progress.playing-fill {
+            stroke: var(--fill-color);
         }
+
+        .circle-progress.armed-ending, .circle-progress.playing-ending {
+            stroke: var(--ending-color);
+        }
+
+        .timer-inner-content {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .timer-label { font-size: 0.75rem; color: var(--subtext-color); margin-bottom: 2px; }
+        .timer-display { font-size: 1.8rem; font-weight: bold; font-family: monospace; color: var(--text-color); }
 
         .speed-control { display: flex; flex-direction: column; gap: 8px; }
         .speed-header { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: bold; }
@@ -234,7 +249,6 @@
 
         .toast { font-size: 0.85rem; text-align: center; color: var(--subtext-color); min-height: 20px; }
 
-        /* Estilos do Configurator do Pedal */
         .pedal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .pedal-card {
             background: #181818; padding: 12px; border-radius: 12px;
@@ -258,7 +272,6 @@
 <body>
 
 <div class="container">
-    <!-- Overlay de Licença -->
     <div id="licenseOverlay" class="license-overlay">
         <h2>🔑 Ativação BTK</h2>
         <p style="color: var(--subtext-color); font-size: 0.9rem; margin: 0;">Insira sua chave de licença para liberar o aplicativo.</p>
@@ -272,10 +285,9 @@
         <span id="status" class="status-badge">Detectando...</span>
     </div>
 
-    <!-- Abas de Navegação -->
     <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('playerTab')">🥁 Player</button>
-        <button class="tab-btn" onclick="switchTab('pedalTab')">🎛️ Config. Pedal</button>
+        <button class="tab-btn active" onclick="switchTab('playerTab')">🎛️ Player</button>
+        <button class="tab-btn" onclick="switchTab('pedalTab')">🦿 Config. Pedal</button>
     </div>
 
     <!-- ABA 1: PLAYER DE ÁUDIO -->
@@ -286,13 +298,17 @@
             </select>
         </div>
 
-        <!-- Timer + Barra de Progresso Cíclica -->
+        <!-- Timer Circular -->
         <div class="timer-box">
-            <div class="timer-label">⏱️ PROGRESSO DO CICLO DO LOOP</div>
-            <div id="timerDisplay" class="timer-display">00:00.0</div>
-            
-            <div class="loop-progress-container">
-                <div id="loopProgressBar" class="loop-progress-bar"></div>
+            <div class="circle-container">
+                <svg class="circle-svg" viewBox="0 0 160 160">
+                    <circle class="circle-bg" cx="80" cy="80" r="70"></circle>
+                    <circle id="circleProgress" class="circle-progress" cx="80" cy="80" r="70"></circle>
+                </svg>
+                <div class="timer-inner-content">
+                    <div id="timerLabel" class="timer-label">TEMPO / LOOP</div>
+                    <div id="timerDisplay" class="timer-display">00:00.0</div>
+                </div>
             </div>
         </div>
 
@@ -385,13 +401,14 @@
 <script>
     const VALID_LICENSES = ['BTK-2026-VIP', 'PERCUSSAO-100', 'SHOW-BTK-88'];
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
-    const CACHE_NAME = 'btk-audio-cache-v16';
+    const CACHE_NAME = 'btk-audio-cache-v17';
 
     const licenseOverlay = document.getElementById('licenseOverlay');
     const licenseKeyInput = document.getElementById('licenseKeyInput');
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
-    const loopProgressBar = document.getElementById('loopProgressBar');
+    const timerLabel = document.getElementById('timerLabel');
+    const circleProgress = document.getElementById('circleProgress');
     const speedSlider = document.getElementById('speedSlider');
     const speedDisplay = document.getElementById('speedDisplay');
     const btnPlay = document.getElementById('btnPlay');
@@ -414,8 +431,9 @@
     let isEndingPlaying = false;
     let syncInterval = null;
     let lastMasterTime = 0;
-    let wakeLock = null;
     let currentOriginalBpm = null;
+
+    const CIRCLE_CIRCUMFERENCE = 440; // Circunferência do círculo R=70 (2 * PI * 70)
 
     let pedalConfig = {
         'pageup': 'stop',
@@ -684,7 +702,6 @@
         audioElements = []; fillAudioElements = []; endingAudioElements = [];
 
         try {
-            // Loops Principais
             for (let i = 0; i < selectedSong.tracks.length; i++) {
                 const track = selectedSong.tracks[i];
                 toastMessage.textContent = `Carregando ${track.name} (${i + 1}/${selectedSong.tracks.length})...`;
@@ -720,7 +737,6 @@
                 stemsContainer.appendChild(row);
             }
 
-            // Viradas
             if (selectedSong.fillTracks.length > 0) {
                 for (let f = 0; f < selectedSong.fillTracks.length; f++) {
                     const fillSource = await getAudioBlobUrl(selectedSong.fillTracks[f].url);
@@ -735,7 +751,6 @@
                 btnFill.disabled = true;
             }
 
-            // Finalizações
             if (selectedSong.endingTracks.length > 0) {
                 for (let e = 0; e < selectedSong.endingTracks.length; e++) {
                     const endSource = await getAudioBlobUrl(selectedSong.endingTracks[e].url);
@@ -762,13 +777,13 @@
         if (!isFillArmed) {
             isFillArmed = true;
             btnFill.classList.add('armed');
-            loopProgressBar.classList.add('armed-fill');
+            circleProgress.classList.add('armed-fill');
             btnFill.textContent = '⏳ VIRADA AGENDADA...';
             toastMessage.textContent = 'Virada agendada para o final do ciclo!';
         } else {
             isFillArmed = false;
             btnFill.classList.remove('armed');
-            loopProgressBar.classList.remove('armed-fill');
+            circleProgress.classList.remove('armed-fill');
             btnFill.textContent = '🪘 VIRADA / FILL';
             toastMessage.textContent = 'Virada cancelada.';
         }
@@ -778,7 +793,7 @@
         if (isPlaying && endingAudioElements.length > 0 && !isEndingArmed) {
             isEndingArmed = true;
             btnStop.classList.add('armed');
-            loopProgressBar.classList.add('armed-ending');
+            circleProgress.classList.add('armed-ending');
             btnStop.textContent = '⏳ FINALIZANDO...';
             toastMessage.textContent = 'Finalização agendada para o final do ciclo!';
         } else {
@@ -812,9 +827,11 @@
 
         btnFill.classList.remove('armed'); btnFill.textContent = '🪘 VIRADA / FILL';
         btnStop.classList.remove('armed'); btnStop.textContent = 'STOP';
-        loopProgressBar.className = 'loop-progress-bar';
-        loopProgressBar.style.width = '0%';
+        
+        circleProgress.className = 'circle-progress';
+        circleProgress.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
 
+        timerLabel.textContent = 'TEMPO / LOOP';
         btnPlay.textContent = 'PLAY';
         stopSyncAndTimer();
         timerDisplay.textContent = '00:00.0'; lastMasterTime = 0;
@@ -830,43 +847,62 @@
         endingAudioElements.forEach(audio => { audio.playbackRate = rate; applyPitchPreservation(audio); });
     });
 
-    // MONITOR DE TEMPO E BARRA CÍCLICA
+    // ATUALIZAÇÃO DO TIMER E DO CIRCULO PROGRESSIVO EM TEMPO REAL
     function startSyncAndTimer() {
         stopSyncAndTimer();
         syncInterval = setInterval(() => {
-            if (!isPlaying || audioElements.length === 0) return;
-            const master = audioElements[0];
+            if (!isPlaying) return;
 
-            // Atualiza a Barra de Progresso Cíclica
-            if (master.duration) {
-                const progressPercent = (master.currentTime / master.duration) * 100;
-                loopProgressBar.style.width = `${progressPercent}%`;
+            let master = null;
+
+            // Define qual é o áudio máster ativo no momento para calcular a porcentagem
+            if (isEndingPlaying && endingAudioElements.length > 0) {
+                master = endingAudioElements[0];
+                timerLabel.textContent = '🏁 FINALIZANDO';
+            } else if (isFillPlaying && fillAudioElements.length > 0) {
+                master = fillAudioElements[0];
+                timerLabel.textContent = '🔥 VIRADA';
+            } else if (audioElements.length > 0) {
+                master = audioElements[0];
+                timerLabel.textContent = 'TEMPO / LOOP';
             }
 
-            // Detecta o final do ciclo do loop
-            if (master.currentTime < lastMasterTime - 0.5) {
-                if (isEndingArmed && !isEndingPlaying) {
-                    dispararFinalizacao();
-                } else if (isFillArmed && !isFillPlaying) {
-                    dispararVirada();
-                } else {
-                    audioElements.forEach(a => a.currentTime = master.currentTime);
+            if (!master) return;
+
+            // Desenha o círculo proporcionalmente (0% a 100%)
+            if (master.duration && !isNaN(master.duration)) {
+                const percent = master.currentTime / master.duration;
+                const offset = CIRCLE_CIRCUMFERENCE - (percent * CIRCLE_CIRCUMFERENCE);
+                circleProgress.style.strokeDashoffset = offset;
+            }
+
+            // Detecta quando o loop de base reinicia
+            if (!isFillPlaying && !isEndingPlaying) {
+                if (master.currentTime < lastMasterTime - 0.5) {
+                    if (isEndingArmed) {
+                        dispararFinalizacao();
+                    } else if (isFillArmed) {
+                        dispararVirada();
+                    } else {
+                        audioElements.forEach(a => a.currentTime = master.currentTime);
+                    }
                 }
+                lastMasterTime = master.currentTime;
             }
-            lastMasterTime = master.currentTime;
 
-            const current = isEndingPlaying ? endingAudioElements[0].currentTime : (isFillPlaying ? fillAudioElements[0].currentTime : master.currentTime);
+            const current = master.currentTime;
             const mins = Math.floor(current / 60).toString().padStart(2, '0');
             const secs = Math.floor(current % 60).toString().padStart(2, '0');
             const ms = Math.floor((current % 1) * 10);
             timerDisplay.textContent = `${mins}:${secs}.${ms}`;
-        }, 80);
+        }, 60);
     }
 
     function dispararVirada() {
         isFillArmed = false; isFillPlaying = true;
         btnFill.classList.remove('armed'); 
-        loopProgressBar.classList.remove('armed-fill');
+        circleProgress.classList.remove('armed-fill');
+        circleProgress.classList.add('playing-fill');
         btnFill.textContent = '🔥 TOCANDO VIRADA...';
 
         audioElements.forEach(a => a.pause());
@@ -881,7 +917,10 @@
         const masterFill = fillAudioElements[0];
         const onFillEnd = () => {
             isFillPlaying = false;
+            circleProgress.classList.remove('playing-fill');
             btnFill.textContent = '🪘 VIRADA / FILL';
+            
+            // Retorna ao loop principal
             audioElements.forEach(a => { a.currentTime = 0; a.play().catch(e => console.error(e)); });
             masterFill.removeEventListener('ended', onFillEnd);
         };
@@ -891,7 +930,8 @@
     function dispararFinalizacao() {
         isEndingArmed = false; isEndingPlaying = true;
         btnStop.classList.remove('armed');
-        loopProgressBar.classList.remove('armed-ending');
+        circleProgress.classList.remove('armed-ending');
+        circleProgress.classList.add('playing-ending');
 
         audioElements.forEach(a => a.pause());
 
