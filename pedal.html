@@ -58,7 +58,6 @@
             }
         }
 
-        /* Overlay de Licença */
         .license-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -80,7 +79,6 @@
             outline: none; text-transform: uppercase;
         }
 
-        /* Abas de Navegação */
         .nav-tabs {
             display: flex;
             background: #2a2a2a;
@@ -197,7 +195,6 @@
 
         .toast { font-size: 0.85rem; text-align: center; color: var(--subtext-color); min-height: 20px; }
 
-        /* Estilos do Configurator do Pedal Chocolate Plus */
         .pedal-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -250,12 +247,11 @@
 <body>
 
 <div class="container">
-    <!-- Overlay da Licença -->
     <div id="licenseOverlay" class="license-overlay">
         <h2>🔑 Ativação BTK</h2>
         <p style="color: var(--subtext-color); font-size: 0.9rem; margin: 0;">Insira sua chave de licença para liberar o aplicativo.</p>
         <input type="text" id="licenseKeyInput" class="license-input" placeholder="XXXX-XXXX-XXXX" autocomplete="off">
-        <button id="btnActivate" style="width:100%; background:var(--accent-color); color:#000;">ATIVAR LICENÇA</button>
+        <button id="btnActivate" style="width:100%; background:var(--accent-color); color:#000; font-weight:bold;">ATIVAR LICENÇA</button>
         <div id="licenseMessage" style="color: var(--error-color); font-size: 0.85rem; min-height: 18px;"></div>
     </div>
 
@@ -264,7 +260,6 @@
         <span id="status" class="status-badge">Detectando...</span>
     </div>
 
-    <!-- Navegação por Abas -->
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('playerTab')">🎛️ Player</button>
         <button class="tab-btn" onclick="switchTab('pedalTab')">🦿 Config. Pedal</button>
@@ -307,69 +302,66 @@
         <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudio Selecionado do Cache</button>
     </div>
 
-    <!-- ABA 2: CONFIGURAÇÃO DO PEDAL CHOCOLATE PLUS -->
+    <!-- ABA 2: CONFIGURAÇÃO DO PEDAL (MODO KEYBOARD B) -->
     <div id="pedalTab" class="tab-content">
         <div style="font-size: 0.85rem; color: var(--subtext-color); text-align: center;">
-            Configure o que cada um dos 4 botões do <b>Chocolate Plus</b> fará ao ser pressionado no palco:
+            Mapeamento do Chocolate Plus no modo <b>Keyboard B</b>:
         </div>
 
         <div class="pedal-grid">
-            <!-- Botão A -->
+            <!-- Pedal A -->
             <div class="pedal-card">
                 <div class="pedal-title">
                     <span>PEDAL A</span>
-                    <span id="badgeA" class="pedal-key-badge">Tecla: PageDown</span>
+                    <span class="pedal-key-badge">PageUp</span>
                 </div>
                 <select id="actionPedalA" onchange="savePedalConfig()">
+                    <option value="stop">⏹ Stop</option>
                     <option value="play">▶ Play / Pause</option>
                     <option value="fill">🪘 Virada / Fill</option>
-                    <option value="stop">⏹ Stop</option>
                     <option value="speed_up">⏱️ Velocidade +5%</option>
                     <option value="speed_down">⏱️ Velocidade -5%</option>
-                    <option value="mute_1">🔇 Mute Canal 1</option>
                     <option value="none">❌ Nenhuma Ação</option>
                 </select>
             </div>
 
-            <!-- Botão B -->
+            <!-- Pedal B -->
             <div class="pedal-card">
                 <div class="pedal-title">
                     <span>PEDAL B</span>
-                    <span id="badgeB" class="pedal-key-badge">Tecla: V</span>
+                    <span class="pedal-key-badge">PageDown</span>
                 </div>
                 <select id="actionPedalB" onchange="savePedalConfig()">
-                    <option value="fill">🪘 Virada / Fill</option>
                     <option value="play">▶ Play / Pause</option>
+                    <option value="fill">🪘 Virada / Fill</option>
                     <option value="stop">⏹ Stop</option>
                     <option value="speed_up">⏱️ Velocidade +5%</option>
                     <option value="speed_down">⏱️ Velocidade -5%</option>
-                    <option value="mute_2">🔇 Mute Canal 2</option>
                     <option value="none">❌ Nenhuma Ação</option>
                 </select>
             </div>
 
-            <!-- Botão C -->
+            <!-- Pedal C -->
             <div class="pedal-card">
                 <div class="pedal-title">
                     <span>PEDAL C</span>
-                    <span id="badgeC" class="pedal-key-badge">Tecla: PageUp</span>
+                    <span class="pedal-key-badge">Espaço</span>
                 </div>
                 <select id="actionPedalC" onchange="savePedalConfig()">
-                    <option value="stop">⏹ Stop</option>
-                    <option value="play">▶ Play / Pause</option>
                     <option value="fill">🪘 Virada / Fill</option>
+                    <option value="play">▶ Play / Pause</option>
+                    <option value="stop">⏹ Stop</option>
                     <option value="speed_up">⏱️ Velocidade +5%</option>
                     <option value="speed_down">⏱️ Velocidade -5%</option>
-                    <option value="mute_3">🔇 Mute Canal 3</option>
                     <option value="none">❌ Nenhuma Ação</option>
                 </select>
             </div>
 
-            <!-- Botão D -->
+            <!-- Pedal D -->
             <div class="pedal-card">
                 <div class="pedal-title">
                     <span>PEDAL D</span>
-                    <span id="badgeD" class="pedal-key-badge">Tecla: ArrowUp</span>
+                    <span class="pedal-key-badge">Enter</span>
                 </div>
                 <select id="actionPedalD" onchange="savePedalConfig()">
                     <option value="speed_up">⏱️ Velocidade +5%</option>
@@ -382,9 +374,8 @@
             </div>
         </div>
 
-        <!-- Monitor de Teste do Pedal em Tempo Real -->
         <div id="testPedalBox" class="test-box">
-            🦶 <b>TESTE DO PEDAL:</b> Pise em qualquer botão do Chocolate Plus para testar o sinal.
+            🦶 <b>TESTE DO PEDAL:</b> Pise em qualquer botão do Chocolate Plus para validar o sinal.
         </div>
     </div>
 </div>
@@ -392,7 +383,7 @@
 <script>
     const VALID_LICENSES = ['BTK-2026-VIP', 'PERCUSSAO-100', 'SHOW-BTK-88'];
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
-    const CACHE_NAME = 'btk-audio-cache-v14';
+    const CACHE_NAME = 'btk-audio-cache-v15';
 
     const licenseOverlay = document.getElementById('licenseOverlay');
     const licenseKeyInput = document.getElementById('licenseKeyInput');
@@ -420,12 +411,12 @@
     let wakeLock = null;
     let currentOriginalBpm = null;
 
-    // Configuração do Pedal Chocolate Plus (Chaves Padrão enviadas por ele)
+    // Mapeamento padrão ajustado para o modo "Keyboard B" do Chocolate Plus
     let pedalConfig = {
-        'pagedown': 'play',    // Pedal A (ou Espaço/Enter)
-        'v': 'fill',           // Pedal B (Letra V)
-        'pageup': 'stop',      // Pedal C (ou Esc)
-        'arrowup': 'speed_up'  // Pedal D
+        'pageup': 'stop',      // Pedal A
+        'pagedown': 'play',    // Pedal B
+        ' ': 'fill',           // Pedal C (Espaço)
+        'enter': 'speed_up'    // Pedal D
     };
 
     function switchTab(tabId) {
@@ -462,26 +453,25 @@
         }
     });
 
-    // Salva e Carrega as Configurações do Pedal
     function loadPedalConfig() {
         const saved = localStorage.getItem('btk_pedal_config');
         if (saved) {
             try {
                 pedalConfig = JSON.parse(saved);
-                document.getElementById('actionPedalA').value = pedalConfig['pagedown'] || 'play';
-                document.getElementById('actionPedalB').value = pedalConfig['v'] || 'fill';
-                document.getElementById('actionPedalC').value = pedalConfig['pageup'] || 'stop';
-                document.getElementById('actionPedalD').value = pedalConfig['arrowup'] || 'speed_up';
+                document.getElementById('actionPedalA').value = pedalConfig['pageup'] || 'stop';
+                document.getElementById('actionPedalB').value = pedalConfig['pagedown'] || 'play';
+                document.getElementById('actionPedalC').value = pedalConfig[' '] || 'fill';
+                document.getElementById('actionPedalD').value = pedalConfig['enter'] || 'speed_up';
             } catch(e){}
         }
     }
 
     function savePedalConfig() {
         pedalConfig = {
-            'pagedown': document.getElementById('actionPedalA').value,
-            'v': document.getElementById('actionPedalB').value,
-            'pageup': document.getElementById('actionPedalC').value,
-            'arrowup': document.getElementById('actionPedalD').value
+            'pageup': document.getElementById('actionPedalA').value,
+            'pagedown': document.getElementById('actionPedalB').value,
+            ' ': document.getElementById('actionPedalC').value,
+            'enter': document.getElementById('actionPedalD').value
         };
         localStorage.setItem('btk_pedal_config', JSON.stringify(pedalConfig));
     }
@@ -884,7 +874,6 @@
         statusBadge.className = `status-badge ${type}`;
     }
 
-    // EXECUTOR DE AÇÕES DO PEDAL
     function triggerAction(actionName) {
         switch (actionName) {
             case 'play': if (!btnPlay.disabled) btnPlay.click(); break;
@@ -898,18 +887,9 @@
                 speedSlider.value = Math.max(50, parseInt(speedSlider.value) - 5);
                 speedSlider.dispatchEvent(new Event('input'));
                 break;
-            case 'mute_1': toggleMuteByChannel(0); break;
-            case 'mute_2': toggleMuteByChannel(1); break;
-            case 'mute_3': toggleMuteByChannel(2); break;
         }
     }
 
-    function toggleMuteByChannel(index) {
-        const toggleBtns = stemsContainer.querySelectorAll('.btn-toggle');
-        if (toggleBtns[index]) toggleBtns[index].click();
-    }
-
-    // MAPEADOR GERAL DE ENTRADA DO PEDAL (KEYDOWN)
     document.addEventListener('keydown', (e) => {
         if (document.activeElement === licenseKeyInput) return;
         if (document.activeElement === trackSelect) trackSelect.blur();
@@ -917,31 +897,25 @@
         const rawKey = e.key;
         const key = rawKey.toLowerCase();
 
-        // ATUALIZA O TESTER VISUAL NA ABA DO PEDAL
         const testBox = document.getElementById('testPedalBox');
         testBox.classList.add('active');
         testBox.innerHTML = `✅ SINAL RECEBIDO! Tecla enviada pelo pedal: <b>"${rawKey}"</b> (code: ${e.code})`;
         setTimeout(() => testBox.classList.remove('active'), 1200);
 
-        // IMPEDE SCROLL DE TELA
         if ([' ', 'pagedown', 'pageup', 'arrowup', 'arrowdown'].includes(key)) {
             e.preventDefault();
         }
 
-        // 1. MAPEAMENTO CUSTOMIZADO DO CHOCOLATE PLUS
         if (pedalConfig[key]) {
             triggerAction(pedalConfig[key]);
             return;
         }
 
-        // 2. TECLAS PADRÃO DE ATALHO DO TECLADO
         switch (key) {
             case ' ':
             case 'enter': triggerAction('play'); break;
             case 'escape': triggerAction('stop'); break;
             case 'v': triggerAction('fill'); break;
-            case 'arrowup': triggerAction('speed_up'); break;
-            case 'arrowdown': triggerAction('speed_down'); break;
         }
     });
 
