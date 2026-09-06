@@ -197,6 +197,14 @@
             font-size: 0.85rem; border-radius: 10px; font-weight: bold;
         }
 
+        .btn-clear-cache {
+            background: transparent; color: var(--subtext-color);
+            border: 1px solid #444; padding: 10px 12px;
+            font-size: 0.8rem; border-radius: 8px; margin-top: 4px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn-clear-cache:hover { background: #2a2a2a; color: var(--text-color); }
+
         @keyframes pulse {
             from { opacity: 1; transform: scale(1); }
             to { opacity: 0.7; transform: scale(0.99); }
@@ -323,6 +331,7 @@
         </div>
 
         <div id="toastMessage" class="toast">Aguardando ativação...</div>
+        <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudio Selecionado do Cache</button>
     </div>
 
     <!-- TELA 3: PLAYLIST -->
@@ -413,6 +422,7 @@
     const btnStop = document.getElementById('btnStop');
     const btnFill = document.getElementById('btnFill');
     const btnAddPlaylist = document.getElementById('btnAddPlaylist');
+    const btnClearCache = document.getElementById('btnClearCache');
     const stemsContainer = document.getElementById('stemsContainer');
     const statusBadge = document.getElementById('status');
     const toastMessage = document.getElementById('toastMessage');
@@ -745,6 +755,43 @@
         toastMessage.textContent = `"${song.name}" adicionada à playlist!`;
     });
 
+    // LIMPEZA SELETIVA DE CACHE
+    btnClearCache.addEventListener('click', async () => {
+        const selectedIndex = trackSelect.value;
+        if (selectedIndex === '') { 
+            toastMessage.textContent = 'Selecione uma música para limpar o cache.'; 
+            return; 
+        }
+
+        stopAll(); 
+        clearCurrentAudioObjects();
+        const selectedSong = songsData[selectedIndex];
+        
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            let removedCount = 0;
+            const allTrackUrls = [
+                ...selectedSong.tracks,
+                ...(selectedSong.fillTracks || []),
+                ...(selectedSong.endingTracks || [])
+            ];
+
+            for (const track of allTrackUrls) {
+                if (await cache.delete(track.url)) removedCount++;
+            }
+
+            audioElements = []; fillAudioElements = []; endingAudioElements = [];
+            stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione uma música para carregar os canais.</div>';
+            btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true; btnAddPlaylist.disabled = true;
+            trackSelect.value = '';
+
+            await updateSelectCacheIndicators();
+            toastMessage.textContent = `Cache de "${selectedSong.name}" limpo! (${removedCount} arquivos removidos)`;
+        } catch (e){
+            toastMessage.textContent = 'Erro ao tentar limpar o cache.';
+        }
+    });
+
     function savePlaylistToStorage() {
         localStorage.setItem('btk_playlist_data', JSON.stringify(playlist));
     }
@@ -1042,9 +1089,11 @@
         const key = rawKey.toLowerCase();
 
         const testBox = document.getElementById('testPedalBox');
-        testBox.classList.add('active');
-        testBox.innerHTML = `✅ SINAL RECEBIDO! Tecla enviada pelo pedal: <b>"${rawKey}"</b> (code: ${e.code})`;
-        setTimeout(() => testBox.classList.remove('active'), 1200);
+        if (testBox) {
+            testBox.classList.add('active');
+            testBox.innerHTML = `✅ SINAL RECEBIDO! Tecla enviada pelo pedal: <b>"${rawKey}"</b> (code: ${e.code})`;
+            setTimeout(() => testBox.classList.remove('active'), 1200);
+        }
 
         if ([' ', 'pagedown', 'pageup', 'arrowup', 'arrowdown'].includes(key)) {
             e.preventDefault();
