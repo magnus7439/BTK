@@ -10,6 +10,7 @@
             --card-bg: #1e1e1e;
             --accent-color: #ff9800;
             --fill-color: #e91e63;
+            --ending-color: #9c27b0;
             --text-color: #ffffff;
             --subtext-color: #b0b0b0;
             --error-color: #f44336;
@@ -43,7 +44,7 @@
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 16px;
             position: relative;
         }
 
@@ -58,6 +59,7 @@
             }
         }
 
+        /* Licença Overlay */
         .license-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -79,6 +81,7 @@
             outline: none; text-transform: uppercase;
         }
 
+        /* Navegação por Abas */
         .nav-tabs {
             display: flex;
             background: #2a2a2a;
@@ -89,8 +92,8 @@
 
         .tab-btn {
             flex: 1;
-            padding: 10px;
-            font-size: 0.85rem;
+            padding: 10px 4px;
+            font-size: 0.8rem;
             font-weight: bold;
             background: transparent;
             color: var(--subtext-color);
@@ -105,7 +108,7 @@
             color: #000;
         }
 
-        .tab-content { display: none; flex-direction: column; gap: 18px; }
+        .tab-content { display: none; flex-direction: column; gap: 16px; }
         .tab-content.active { display: flex; }
 
         .header {
@@ -113,135 +116,145 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #333;
-            padding-bottom: 12px;
+            padding-bottom: 10px;
         }
 
-        .header h2 { margin: 0; font-size: 1.3rem; }
+        .header h2 { margin: 0; font-size: 1.2rem; }
 
         .status-badge {
-            font-size: 0.8rem; padding: 4px 8px;
+            font-size: 0.75rem; padding: 4px 8px;
             border-radius: 12px; background: #333;
             color: var(--subtext-color);
         }
         .status-badge.online { background: rgba(76, 175, 80, 0.2); color: var(--success-color); }
         .status-badge.offline { background: rgba(244, 67, 54, 0.2); color: var(--error-color); }
 
-        select, input[type="text"] {
+        select {
             width: 100%; padding: 14px; font-size: 0.95rem;
             background: #2a2a2a; color: var(--text-color);
             border: 2px solid #444; border-radius: 12px;
             outline: none; cursor: pointer;
         }
 
+        /* Timer Circular */
         .timer-box {
             text-align: center; background: #181818;
-            padding: 14px; border-radius: 12px;
+            padding: 14px; border-radius: 16px;
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            position: relative;
         }
 
-        .timer-label { font-size: 0.8rem; color: var(--subtext-color); margin-bottom: 4px; }
-        .timer-display { font-size: 2.5rem; font-weight: bold; font-family: monospace; color: var(--accent-color); }
+        .circle-container {
+            position: relative;
+            width: 130px; height: 130px;
+            display: flex; justify-content: center; align-items: center;
+        }
 
-        .speed-control { display: flex; flex-direction: column; gap: 8px; }
-        .speed-header { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: bold; }
+        .circle-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        .circle-bg { fill: none; stroke: #2a2a2a; stroke-width: 10; }
+        .circle-progress {
+            fill: none; stroke: var(--accent-color); stroke-width: 10;
+            stroke-dasharray: 440; stroke-dashoffset: 440;
+            stroke-linecap: round; transition: stroke-dashoffset 0.08s linear, stroke 0.3s;
+        }
+        .circle-progress.playing-fill { stroke: var(--fill-color); }
+        .circle-progress.playing-ending { stroke: var(--ending-color); }
+
+        .timer-inner-content { position: absolute; display: flex; flex-direction: column; align-items: center; }
+        .timer-label { font-size: 0.7rem; color: var(--subtext-color); }
+        .timer-display { font-size: 1.6rem; font-weight: bold; font-family: monospace; color: var(--text-color); }
+
+        .playlist-info-badge {
+            font-size: 0.8rem; background: #252525; padding: 6px 12px;
+            border-radius: 20px; color: var(--accent-color); border: 1px solid #333;
+        }
+
+        .speed-control { display: flex; flex-direction: column; gap: 6px; }
+        .speed-header { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: bold; }
 
         input[type="range"] {
-            width: 100%; height: 16px; border-radius: 8px;
+            width: 100%; height: 14px; border-radius: 8px;
             accent-color: var(--accent-color); cursor: pointer;
         }
 
-        .player-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .player-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
         button {
-            padding: 16px; font-size: 1rem; font-weight: bold;
-            border: none; border-radius: 12px; cursor: pointer;
-            transition: all 0.2s;
+            padding: 14px; font-size: 0.95rem; font-weight: bold;
+            border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s;
         }
         button:disabled { opacity: 0.4; cursor: not-allowed; }
 
         .btn-play { background: var(--accent-color); color: #000; }
         .btn-stop { background: #333; color: var(--text-color); }
+        .btn-stop.armed { background: var(--ending-color); color: #fff; }
+        
         .btn-fill {
             background: var(--fill-color); color: #fff;
-            grid-column: span 2; font-size: 1.05rem;
+            grid-column: span 2; font-size: 1rem;
         }
         .btn-fill.armed { animation: pulse 0.8s infinite alternate; background: #ff5252; }
+
+        .btn-add-playlist {
+            background: #2e7d32; color: #fff; padding: 12px;
+            font-size: 0.85rem; border-radius: 10px; font-weight: bold;
+        }
 
         @keyframes pulse {
             from { opacity: 1; transform: scale(1); }
             to { opacity: 0.7; transform: scale(0.99); }
         }
 
-        .btn-clear-cache {
-            background: transparent; color: var(--subtext-color);
-            border: 1px solid #444; padding: 10px 12px;
-            font-size: 0.8rem; border-radius: 8px; margin-top: 5px;
-        }
-
         .stems-container {
-            display: flex; flex-direction: column; gap: 10px;
-            background: #181818; padding: 12px; border-radius: 12px;
-            max-height: 220px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 8px;
+            background: #181818; padding: 10px; border-radius: 12px;
+            max-height: 180px; overflow-y: auto;
         }
 
         .stem-row {
-            display: flex; justify-content: space-between;
-            align-items: center; background: #2a2a2a;
-            padding: 10px 14px; border-radius: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: #2a2a2a; padding: 8px 12px; border-radius: 8px;
         }
 
-        .btn-toggle { padding: 8px 14px; font-size: 0.85rem; border-radius: 8px; min-width: 65px; }
+        .btn-toggle { padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; min-width: 60px; }
         .btn-toggle.on { background: var(--success-color); color: #fff; }
         .btn-toggle.off { background: var(--btn-off); color: var(--subtext-color); }
 
-        .toast { font-size: 0.85rem; text-align: center; color: var(--subtext-color); min-height: 20px; }
-
-        .pedal-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
+        /* Estilos da Playlist (Tela 3) */
+        .playlist-container {
+            display: flex; flex-direction: column; gap: 10px;
+            max-height: 320px; overflow-y: auto;
         }
 
+        .playlist-item {
+            background: #181818; border: 1px solid #333; padding: 10px 14px;
+            border-radius: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .playlist-item.active {
+            border-color: var(--accent-color); background: rgba(255, 152, 0, 0.1);
+        }
+
+        .playlist-item-title { font-size: 0.9rem; font-weight: bold; }
+        .playlist-item-actions { display: flex; gap: 6px; }
+
+        .btn-mini {
+            padding: 6px 10px; font-size: 0.75rem; border-radius: 6px; background: #333; color: #fff;
+        }
+
+        .pedal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .pedal-card {
-            background: #181818;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            background: #181818; padding: 10px; border-radius: 10px;
+            border: 1px solid #333; display: flex; flex-direction: column; gap: 6px;
         }
-
-        .pedal-title {
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: var(--accent-color);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .pedal-key-badge {
-            font-size: 0.75rem;
-            background: #333;
-            padding: 2px 6px;
-            border-radius: 6px;
-            color: var(--subtext-color);
-        }
-
+        .pedal-title { font-size: 0.85rem; font-weight: bold; color: var(--accent-color); display: flex; justify-content: space-between; }
+        .pedal-key-badge { font-size: 0.7rem; background: #333; padding: 2px 6px; border-radius: 4px; color: var(--subtext-color); }
         .test-box {
-            background: #181818;
-            border: 2px dashed #444;
-            padding: 14px;
-            border-radius: 12px;
-            text-align: center;
-            font-size: 0.85rem;
-            color: var(--subtext-color);
+            background: #181818; border: 2px dashed #444; padding: 12px;
+            border-radius: 10px; text-align: center; font-size: 0.8rem; color: var(--subtext-color);
         }
-
-        .test-box.active {
-            border-color: var(--success-color);
-            color: var(--success-color);
-            font-weight: bold;
-        }
+        .test-box.active { border-color: var(--success-color); color: var(--success-color); font-weight: bold; }
+        .toast { font-size: 0.8rem; text-align: center; color: var(--subtext-color); min-height: 18px; }
     </style>
 </head>
 <body>
@@ -249,7 +262,7 @@
 <div class="container">
     <div id="licenseOverlay" class="license-overlay">
         <h2>🔑 Ativação BTK</h2>
-        <p style="color: var(--subtext-color); font-size: 0.9rem; margin: 0;">Insira sua chave de licença para liberar o aplicativo.</p>
+        <p style="color: var(--subtext-color); font-size: 0.85rem; margin: 0;">Insira sua chave de licença para liberar o aplicativo.</p>
         <input type="text" id="licenseKeyInput" class="license-input" placeholder="XXXX-XXXX-XXXX" autocomplete="off">
         <button id="btnActivate" style="width:100%; background:var(--accent-color); color:#000; font-weight:bold;">ATIVAR LICENÇA</button>
         <div id="licenseMessage" style="color: var(--error-color); font-size: 0.85rem; min-height: 18px;"></div>
@@ -260,12 +273,14 @@
         <span id="status" class="status-badge">Detectando...</span>
     </div>
 
+    <!-- Navegação de 3 Abas -->
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('playerTab')">🎛️ Player</button>
-        <button class="tab-btn" onclick="switchTab('pedalTab')">🦿 Config. Pedal</button>
+        <button class="tab-btn" onclick="switchTab('playlistTab')">📋 Playlist</button>
+        <button class="tab-btn" onclick="switchTab('pedalTab')">🦿 Pedal</button>
     </div>
 
-    <!-- ABA 1: PLAYER DE ÁUDIO -->
+    <!-- TELA 1: PLAYER -->
     <div id="playerTab" class="tab-content active">
         <div>
             <select id="trackSelect" disabled>
@@ -273,9 +288,21 @@
             </select>
         </div>
 
+        <div id="playlistInfoBadge" class="playlist-info-badge" style="display: none; text-align: center;">
+            📍 Sequência do Show: <b id="playlistPosText">0 / 0</b>
+        </div>
+
         <div class="timer-box">
-            <div class="timer-label">⏱️ TEMPO DECORRIDO (LOOP)</div>
-            <div id="timerDisplay" class="timer-display">00:00.0</div>
+            <div class="circle-container">
+                <svg class="circle-svg" viewBox="0 0 160 160">
+                    <circle class="circle-bg" cx="80" cy="80" r="70"></circle>
+                    <circle id="circleProgress" class="circle-progress" cx="80" cy="80" r="70"></circle>
+                </svg>
+                <div class="timer-inner-content">
+                    <div id="timerLabel" class="timer-label">TEMPO / LOOP</div>
+                    <div id="timerDisplay" class="timer-display">00:00.0</div>
+                </div>
+            </div>
         </div>
 
         <div class="speed-control">
@@ -292,6 +319,8 @@
             <button id="btnFill" class="btn-fill" disabled>🪘 VIRADA / FILL</button>
         </div>
 
+        <button id="btnAddPlaylist" class="btn-add-playlist" disabled>➕ ADICIONAR À PLAYLIST</button>
+
         <div id="stemsContainer" class="stems-container">
             <div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">
                 Selecione uma música para carregar os canais.
@@ -299,77 +328,69 @@
         </div>
 
         <div id="toastMessage" class="toast">Aguardando ativação...</div>
-        <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudio Selecionado do Cache</button>
     </div>
 
-    <!-- ABA 2: CONFIGURAÇÃO DO PEDAL (MODO KEYBOARD B) -->
+    <!-- TELA 3: PLAYLIST (SETLIST) -->
+    <div id="playlistTab" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <b style="font-size: 0.9rem;">📋 Fila de Execução do Show</b>
+            <button class="btn-mini" onclick="clearPlaylist()" style="background: var(--error-color);">🗑️ Limpar Tudo</button>
+        </div>
+
+        <div id="playlistItems" class="playlist-container">
+            <div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem; padding: 20px;">
+                Sua playlist está vazia.<br>Selecione músicas no Player e clique em "Adicionar à Playlist".
+            </div>
+        </div>
+    </div>
+
+    <!-- TELA 2: CONFIGURAÇÃO DO PEDAL -->
     <div id="pedalTab" class="tab-content">
-        <div style="font-size: 0.85rem; color: var(--subtext-color); text-align: center;">
+        <div style="font-size: 0.8rem; color: var(--subtext-color); text-align: center;">
             Mapeamento do Chocolate Plus no modo <b>Keyboard B</b>:
         </div>
 
         <div class="pedal-grid">
-            <!-- Pedal A -->
             <div class="pedal-card">
-                <div class="pedal-title">
-                    <span>PEDAL A</span>
-                    <span class="pedal-key-badge">PageUp</span>
-                </div>
+                <div class="pedal-title"><span>PEDAL A</span><span class="pedal-key-badge">PageUp</span></div>
                 <select id="actionPedalA" onchange="savePedalConfig()">
-                    <option value="stop">⏹ Stop</option>
+                    <option value="stop">⏹ Stop / Finalização</option>
                     <option value="play">▶ Play / Pause</option>
                     <option value="fill">🪘 Virada / Fill</option>
+                    <option value="next_track">⏭️ Próxima (Playlist)</option>
                     <option value="speed_up">⏱️ Velocidade +5%</option>
-                    <option value="speed_down">⏱️ Velocidade -5%</option>
-                    <option value="none">❌ Nenhuma Ação</option>
                 </select>
             </div>
 
-            <!-- Pedal B -->
             <div class="pedal-card">
-                <div class="pedal-title">
-                    <span>PEDAL B</span>
-                    <span class="pedal-key-badge">PageDown</span>
-                </div>
+                <div class="pedal-title"><span>PEDAL B</span><span class="pedal-key-badge">PageDown</span></div>
                 <select id="actionPedalB" onchange="savePedalConfig()">
                     <option value="play">▶ Play / Pause</option>
                     <option value="fill">🪘 Virada / Fill</option>
-                    <option value="stop">⏹ Stop</option>
+                    <option value="stop">⏹ Stop / Finalização</option>
+                    <option value="next_track">⏭️ Próxima (Playlist)</option>
                     <option value="speed_up">⏱️ Velocidade +5%</option>
-                    <option value="speed_down">⏱️ Velocidade -5%</option>
-                    <option value="none">❌ Nenhuma Ação</option>
                 </select>
             </div>
 
-            <!-- Pedal C -->
             <div class="pedal-card">
-                <div class="pedal-title">
-                    <span>PEDAL C</span>
-                    <span class="pedal-key-badge">Espaço</span>
-                </div>
+                <div class="pedal-title"><span>PEDAL C</span><span class="pedal-key-badge">Espaço</span></div>
                 <select id="actionPedalC" onchange="savePedalConfig()">
                     <option value="fill">🪘 Virada / Fill</option>
                     <option value="play">▶ Play / Pause</option>
-                    <option value="stop">⏹ Stop</option>
-                    <option value="speed_up">⏱️ Velocidade +5%</option>
-                    <option value="speed_down">⏱️ Velocidade -5%</option>
-                    <option value="none">❌ Nenhuma Ação</option>
+                    <option value="stop">⏹ Stop / Finalização</option>
+                    <option value="next_track">⏭️ Próxima (Playlist)</option>
                 </select>
             </div>
 
-            <!-- Pedal D -->
             <div class="pedal-card">
-                <div class="pedal-title">
-                    <span>PEDAL D</span>
-                    <span class="pedal-key-badge">Enter</span>
-                </div>
+                <div class="pedal-title"><span>PEDAL D</span><span class="pedal-key-badge">Enter</span></div>
                 <select id="actionPedalD" onchange="savePedalConfig()">
+                    <option value="next_track">⏭️ Próxima (Playlist)</option>
                     <option value="speed_up">⏱️ Velocidade +5%</option>
-                    <option value="speed_down">⏱️ Velocidade -5%</option>
                     <option value="play">▶ Play / Pause</option>
                     <option value="fill">🪘 Virada / Fill</option>
-                    <option value="stop">⏹ Stop</option>
-                    <option value="none">❌ Nenhuma Ação</option>
+                    <option value="stop">⏹ Stop / Finalização</option>
                 </select>
             </div>
         </div>
@@ -383,40 +404,50 @@
 <script>
     const VALID_LICENSES = ['BTK-2026-VIP', 'PERCUSSAO-100', 'SHOW-BTK-88'];
     const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRCc-DraIfiV5aNPT81agJjZrFE8BSR0ocAcMbHRxSwEvJMBxlVXr4Vz6DBjxtzotG_M6amT7Myu79_/pub?output=csv';
-    const CACHE_NAME = 'btk-audio-cache-v15';
+    const CACHE_NAME = 'btk-audio-cache-v18';
 
     const licenseOverlay = document.getElementById('licenseOverlay');
     const licenseKeyInput = document.getElementById('licenseKeyInput');
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
+    const timerLabel = document.getElementById('timerLabel');
+    const circleProgress = document.getElementById('circleProgress');
     const speedSlider = document.getElementById('speedSlider');
     const speedDisplay = document.getElementById('speedDisplay');
     const btnPlay = document.getElementById('btnPlay');
     const btnStop = document.getElementById('btnStop');
     const btnFill = document.getElementById('btnFill');
-    const btnClearCache = document.getElementById('btnClearCache');
+    const btnAddPlaylist = document.getElementById('btnAddPlaylist');
     const stemsContainer = document.getElementById('stemsContainer');
     const statusBadge = document.getElementById('status');
     const toastMessage = document.getElementById('toastMessage');
 
     let songsData = [];
+    let playlist = [];
+    let currentPlaylistIndex = -1;
+
     let audioElements = [];
     let fillAudioElements = [];
+    let endingAudioElements = [];
     let objectUrls = [];
+    let currentStemStates = []; // Guarda os mutes ON/OFF
+
     let isPlaying = false;
     let isFillArmed = false;
     let isFillPlaying = false;
+    let isEndingArmed = false;
+    let isEndingPlaying = false;
     let syncInterval = null;
     let lastMasterTime = 0;
-    let wakeLock = null;
     let currentOriginalBpm = null;
 
-    // Mapeamento padrão ajustado para o modo "Keyboard B" do Chocolate Plus
+    const CIRCLE_CIRCUMFERENCE = 440;
+
     let pedalConfig = {
-        'pageup': 'stop',      // Pedal A
-        'pagedown': 'play',    // Pedal B
-        ' ': 'fill',           // Pedal C (Espaço)
-        'enter': 'speed_up'    // Pedal D
+        'pageup': 'stop',
+        'pagedown': 'play',
+        ' ': 'fill',
+        'enter': 'next_track'
     };
 
     function switchTab(tabId) {
@@ -426,8 +457,11 @@
         if (tabId === 'playerTab') {
             document.querySelectorAll('.tab-btn')[0].classList.add('active');
             document.getElementById('playerTab').classList.add('active');
-        } else {
+        } else if (tabId === 'playlistTab') {
             document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('playlistTab').classList.add('active');
+        } else {
+            document.querySelectorAll('.tab-btn')[2].classList.add('active');
             document.getElementById('pedalTab').classList.add('active');
         }
     }
@@ -461,7 +495,7 @@
                 document.getElementById('actionPedalA').value = pedalConfig['pageup'] || 'stop';
                 document.getElementById('actionPedalB').value = pedalConfig['pagedown'] || 'play';
                 document.getElementById('actionPedalC').value = pedalConfig[' '] || 'fill';
-                document.getElementById('actionPedalD').value = pedalConfig['enter'] || 'speed_up';
+                document.getElementById('actionPedalD').value = pedalConfig['enter'] || 'next_track';
             } catch(e){}
         }
     }
@@ -478,17 +512,8 @@
 
     async function initApp() {
         loadPedalConfig();
+        loadPlaylistFromStorage();
         await loadSongs();
-    }
-
-    async function requestWakeLock() {
-        try {
-            if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
-        } catch (err) {}
-    }
-
-    function releaseWakeLock() {
-        if (wakeLock !== null) { wakeLock.release().then(() => { wakeLock = null; }); }
     }
 
     function fixDropboxUrl(url) {
@@ -554,13 +579,16 @@
 
             let mainTracks = [];
             let fillTracks = [];
+            let endingTracks = [];
 
             for (let i = 1; i < parts.length; i++) {
                 const url = fixDropboxUrl(parts[i]);
                 if (url && url.startsWith('http')) {
                     const trackName = instrumentNames[i - 1] || `Faixa ${i}`;
                     
-                    if (trackName.toLowerCase().includes('_vira') || trackName.toLowerCase().includes('_fill')) {
+                    if (trackName.toLowerCase().includes('_fim') || trackName.toLowerCase().includes('_final')) {
+                        endingTracks.push({ name: trackName, url: url });
+                    } else if (trackName.toLowerCase().includes('_vira') || trackName.toLowerCase().includes('_fill')) {
                         fillTracks.push({ name: trackName, url: url });
                     } else {
                         mainTracks.push({ name: trackName, url: url });
@@ -570,7 +598,13 @@
 
             if (mainTracks.length > 0) {
                 const originalBpm = extractBpmFromName(songName);
-                parsed.push({ name: songName, tracks: mainTracks, fillTracks: fillTracks, originalBpm: originalBpm });
+                parsed.push({ 
+                    name: songName, 
+                    tracks: mainTracks, 
+                    fillTracks: fillTracks, 
+                    endingTracks: endingTracks,
+                    originalBpm: originalBpm 
+                });
             }
         }
         return parsed;
@@ -581,35 +615,12 @@
         list.forEach((song, index) => {
             const opt = document.createElement('option');
             opt.value = index;
-            const hasFill = song.fillTracks.length > 0 ? ' [🪘 Virada Ok]' : '';
-            opt.textContent = `🎵 ${song.name} (${song.tracks.length} faixas)${hasFill}`;
+            const hasFill = song.fillTracks.length > 0 ? ' [🪘 Virada]' : '';
+            const hasFim = song.endingTracks.length > 0 ? ' [🏁 Fim]' : '';
+            opt.textContent = `🎵 ${song.name} (${song.tracks.length} faixas)${hasFill}${hasFim}`;
             trackSelect.appendChild(opt);
         });
         trackSelect.disabled = false;
-        await updateSelectCacheIndicators();
-    }
-
-    async function updateSelectCacheIndicators() {
-        try {
-            const cache = await caches.open(CACHE_NAME);
-            for (let i = 0; i < songsData.length; i++) {
-                const song = songsData[i];
-                let allCached = true;
-
-                for (const track of [...song.tracks, ...song.fillTracks]) {
-                    const match = await cache.match(track.url);
-                    if (!match) { allCached = false; break; }
-                }
-
-                const option = trackSelect.options[i + 1];
-                if (option) {
-                    const hasFill = song.fillTracks.length > 0 ? ' [🪘 Virada Ok]' : '';
-                    option.textContent = allCached 
-                        ? `✅ ${song.name} (${song.tracks.length} faixas)${hasFill}`
-                        : `🎵 ${song.name} (${song.tracks.length} faixas)${hasFill}`;
-                }
-            }
-        } catch (e){}
     }
 
     async function getAudioBlobUrl(url) {
@@ -658,24 +669,26 @@
         }
     }
 
-    trackSelect.addEventListener('change', async (e) => {
+    async function loadSongByIndex(index, presetStemStates = null, presetSpeed = null) {
         stopAll();
         clearCurrentAudioObjects();
 
-        const index = e.target.value;
-        if (index === '') {
-            btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true;
+        if (index === '' || index < 0 || index >= songsData.length) {
+            btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true; btnAddPlaylist.disabled = true;
             stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione uma música para carregar os canais.</div>';
             return;
         }
 
+        trackSelect.value = index;
         const selectedSong = songsData[index];
         currentOriginalBpm = selectedSong.originalBpm;
+
+        if (presetSpeed) speedSlider.value = presetSpeed;
         updateSpeedDisplay();
 
-        btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true;
+        btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true; btnAddPlaylist.disabled = true;
         stemsContainer.innerHTML = '';
-        audioElements = []; fillAudioElements = [];
+        audioElements = []; fillAudioElements = []; endingAudioElements = []; currentStemStates = [];
 
         try {
             for (let i = 0; i < selectedSong.tracks.length; i++) {
@@ -684,9 +697,14 @@
                 
                 const audioSource = await getAudioBlobUrl(track.url);
                 const audio = new Audio(audioSource);
-                audio.loop = true; audio.preload = 'auto'; audio.volume = 1;
-                applyPitchPreservation(audio);
+                audio.loop = true; audio.preload = 'auto';
+                
+                // Aplica estado pré-definido de Mute se existir
+                const isInitialOn = presetStemStates ? presetStemStates[i] : true;
+                audio.volume = isInitialOn ? 1 : 0;
+                currentStemStates.push(isInitialOn);
 
+                applyPitchPreservation(audio);
                 await waitForAudioReady(audio);
                 audioElements.push(audio);
 
@@ -698,14 +716,16 @@
                 title.textContent = track.name;
 
                 const toggleBtn = document.createElement('button');
-                toggleBtn.className = 'btn-toggle on';
-                toggleBtn.textContent = 'ON';
+                toggleBtn.className = isInitialOn ? 'btn-toggle on' : 'btn-toggle off';
+                toggleBtn.textContent = isInitialOn ? 'ON' : 'OFF';
 
                 toggleBtn.addEventListener('click', () => {
                     if (audio.volume > 0) {
                         audio.volume = 0; toggleBtn.textContent = 'OFF'; toggleBtn.className = 'btn-toggle off';
+                        currentStemStates[i] = false;
                     } else {
                         audio.volume = 1; toggleBtn.textContent = 'ON'; toggleBtn.className = 'btn-toggle on';
+                        currentStemStates[i] = true;
                     }
                 });
 
@@ -713,11 +733,10 @@
                 stemsContainer.appendChild(row);
             }
 
+            // Viradas
             if (selectedSong.fillTracks.length > 0) {
-                toastMessage.textContent = 'Carregando arquivos de virada...';
                 for (let f = 0; f < selectedSong.fillTracks.length; f++) {
-                    const fillTrack = selectedSong.fillTracks[f];
-                    const fillSource = await getAudioBlobUrl(fillTrack.url);
+                    const fillSource = await getAudioBlobUrl(selectedSong.fillTracks[f].url);
                     const fillAudio = new Audio(fillSource);
                     fillAudio.loop = false; fillAudio.preload = 'auto';
                     applyPitchPreservation(fillAudio);
@@ -729,28 +748,170 @@
                 btnFill.disabled = true;
             }
 
-            btnPlay.disabled = false; btnStop.disabled = false;
+            // Finalizações
+            if (selectedSong.endingTracks.length > 0) {
+                for (let e = 0; e < selectedSong.endingTracks.length; e++) {
+                    const endSource = await getAudioBlobUrl(selectedSong.endingTracks[e].url);
+                    const endAudio = new Audio(endSource);
+                    endAudio.loop = false; endAudio.preload = 'auto';
+                    applyPitchPreservation(endAudio);
+                    await waitForAudioReady(endAudio);
+                    endingAudioElements.push(endAudio);
+                }
+            }
+
+            btnPlay.disabled = false; btnStop.disabled = false; btnAddPlaylist.disabled = false;
             toastMessage.textContent = `Pronto! ${selectedSong.name} carregado.`;
-            await updateSelectCacheIndicators();
 
         } catch (err) {
             toastMessage.textContent = 'Erro ao carregar canais.';
         }
+    }
+
+    trackSelect.addEventListener('change', (e) => {
+        loadSongByIndex(e.target.value);
     });
+
+    // LÓGICA DA PLAYLIST (SETLIST)
+    btnAddPlaylist.addEventListener('click', () => {
+        const selectedIndex = trackSelect.value;
+        if (selectedIndex === '') return;
+
+        const song = songsData[selectedIndex];
+        playlist.push({
+            songIndex: selectedIndex,
+            name: song.name,
+            stemStates: [...currentStemStates],
+            speed: speedSlider.value
+        });
+
+        savePlaylistToStorage();
+        renderPlaylistUI();
+        toastMessage.textContent = `"${song.name}" adicionada à playlist!`;
+    });
+
+    function savePlaylistToStorage() {
+        localStorage.setItem('btk_playlist_data', JSON.stringify(playlist));
+    }
+
+    function loadPlaylistFromStorage() {
+        const saved = localStorage.getItem('btk_playlist_data');
+        if (saved) {
+            try { playlist = JSON.parse(saved); renderPlaylistUI(); } catch(e){}
+        }
+    }
+
+    function renderPlaylistUI() {
+        const container = document.getElementById('playlistItems');
+        const badge = document.getElementById('playlistInfoBadge');
+
+        if (playlist.length === 0) {
+            container.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem; padding: 20px;">Sua playlist está vazia.<br>Selecione músicas no Player e clique em "Adicionar à Playlist".</div>';
+            badge.style.display = 'none';
+            return;
+        }
+
+        badge.style.display = 'block';
+        document.getElementById('playlistPosText').textContent = `${currentPlaylistIndex + 1} / ${playlist.length}`;
+
+        container.innerHTML = '';
+        playlist.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = `playlist-item ${index === currentPlaylistIndex ? 'active' : ''}`;
+
+            const title = document.createElement('span');
+            title.className = 'playlist-item-title';
+            title.textContent = `${index + 1}. ${item.name} (${item.speed}%)`;
+
+            const actions = document.createElement('div');
+            actions.className = 'playlist-item-actions';
+
+            const btnPlayItem = document.createElement('button');
+            btnPlayItem.className = 'btn-mini';
+            btnPlayItem.textContent = '▶ Carregar';
+            btnPlayItem.onclick = () => loadPlaylistItem(index);
+
+            const btnUp = document.createElement('button');
+            btnUp.className = 'btn-mini'; btnUp.textContent = '▲';
+            btnUp.onclick = () => movePlaylistItem(index, -1);
+
+            const btnDown = document.createElement('button');
+            btnDown.className = 'btn-mini'; btnDown.textContent = '▼';
+            btnDown.onclick = () => movePlaylistItem(index, 1);
+
+            const btnDel = document.createElement('button');
+            btnDel.className = 'btn-mini'; btnDel.textContent = '✖';
+            btnDel.style.background = 'var(--error-color)';
+            btnDel.onclick = () => removePlaylistItem(index);
+
+            actions.appendChild(btnPlayItem);
+            actions.appendChild(btnUp);
+            actions.appendChild(btnDown);
+            actions.appendChild(btnDel);
+
+            row.appendChild(title);
+            row.appendChild(actions);
+            container.appendChild(row);
+        });
+    }
+
+    function movePlaylistItem(index, direction) {
+        const target = index + direction;
+        if (target < 0 || target >= playlist.length) return;
+        const temp = playlist[index];
+        playlist[index] = playlist[target];
+        playlist[target] = temp;
+        savePlaylistToStorage();
+        renderPlaylistUI();
+    }
+
+    function removePlaylistItem(index) {
+        playlist.splice(index, 1);
+        if (currentPlaylistIndex >= playlist.length) currentPlaylistIndex = playlist.length - 1;
+        savePlaylistToStorage();
+        renderPlaylistUI();
+    }
+
+    function clearPlaylist() {
+        playlist = []; currentPlaylistIndex = -1;
+        savePlaylistToStorage(); renderPlaylistUI();
+    }
+
+    async function loadPlaylistItem(index) {
+        if (index < 0 || index >= playlist.length) return;
+        currentPlaylistIndex = index;
+        renderPlaylistUI();
+        const item = playlist[index];
+        await loadSongByIndex(item.songIndex, item.stemStates, item.speed);
+    }
+
+    async function loadNextPlaylistItem() {
+        if (playlist.length === 0) return;
+        let nextIndex = currentPlaylistIndex + 1;
+        if (nextIndex >= playlist.length) nextIndex = 0; // Looping no repertório
+        await loadPlaylistItem(nextIndex);
+    }
 
     btnFill.addEventListener('click', () => {
         if (!isPlaying || fillAudioElements.length === 0) return;
-
         if (!isFillArmed) {
-            isFillArmed = true;
-            btnFill.classList.add('armed');
+            isFillArmed = true; btnFill.classList.add('armed');
+            circleProgress.classList.add('armed-fill');
             btnFill.textContent = '⏳ VIRADA AGENDADA...';
-            toastMessage.textContent = 'Virada agendada para o final do ciclo!';
         } else {
-            isFillArmed = false;
-            btnFill.classList.remove('armed');
+            isFillArmed = false; btnFill.classList.remove('armed');
+            circleProgress.classList.remove('armed-fill');
             btnFill.textContent = '🪘 VIRADA / FILL';
-            toastMessage.textContent = 'Virada cancelada.';
+        }
+    });
+
+    btnStop.addEventListener('click', () => {
+        if (isPlaying && endingAudioElements.length > 0 && !isEndingArmed) {
+            isEndingArmed = true; btnStop.classList.add('armed');
+            circleProgress.classList.add('armed-ending');
+            btnStop.textContent = '⏳ FINALIZANDO...';
+        } else {
+            stopAll();
         }
     });
 
@@ -766,62 +927,89 @@
         });
 
         isPlaying = true; btnPlay.textContent = 'PAUSE';
-        requestWakeLock(); startSyncAndTimer();
-    }
-
-    function pauseAll() {
-        audioElements.forEach(audio => audio.pause());
-        fillAudioElements.forEach(audio => audio.pause());
-        isPlaying = false; btnPlay.textContent = 'PLAY';
-        releaseWakeLock(); stopSyncAndTimer();
+        startSyncAndTimer();
     }
 
     function stopAll() {
         audioElements.forEach(audio => { audio.pause(); audio.currentTime = 0; });
         fillAudioElements.forEach(audio => { audio.pause(); audio.currentTime = 0; });
+        endingAudioElements.forEach(audio => { audio.pause(); audio.currentTime = 0; });
+
         isPlaying = false; isFillArmed = false; isFillPlaying = false;
+        isEndingArmed = false; isEndingPlaying = false;
+
         btnFill.classList.remove('armed'); btnFill.textContent = '🪘 VIRADA / FILL';
+        btnStop.classList.remove('armed'); btnStop.textContent = 'STOP';
+        
+        circleProgress.className = 'circle-progress';
+        circleProgress.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
+
+        timerLabel.textContent = 'TEMPO / LOOP';
         btnPlay.textContent = 'PLAY';
-        releaseWakeLock(); stopSyncAndTimer();
+        stopSyncAndTimer();
         timerDisplay.textContent = '00:00.0'; lastMasterTime = 0;
     }
 
     btnPlay.addEventListener('click', () => { if (!isPlaying) playAll(); else pauseAll(); });
-    btnStop.addEventListener('click', () => stopAll());
 
     speedSlider.addEventListener('input', (e) => {
         updateSpeedDisplay();
         const rate = parseInt(e.target.value) / 100;
         audioElements.forEach(audio => { audio.playbackRate = rate; applyPitchPreservation(audio); });
         fillAudioElements.forEach(audio => { audio.playbackRate = rate; applyPitchPreservation(audio); });
+        endingAudioElements.forEach(audio => { audio.playbackRate = rate; applyPitchPreservation(audio); });
     });
 
     function startSyncAndTimer() {
         stopSyncAndTimer();
         syncInterval = setInterval(() => {
-            if (!isPlaying || audioElements.length === 0) return;
-            const master = audioElements[0];
+            if (!isPlaying) return;
 
-            if (master.currentTime < lastMasterTime - 0.5) {
-                if (isFillArmed && !isFillPlaying) {
-                    dispararVirada();
-                } else {
-                    audioElements.forEach(a => a.currentTime = master.currentTime);
-                }
+            let master = null;
+
+            if (isEndingPlaying && endingAudioElements.length > 0) {
+                master = endingAudioElements[0]; timerLabel.textContent = '🏁 FINALIZANDO';
+            } else if (isFillPlaying && fillAudioElements.length > 0) {
+                master = fillAudioElements[0]; timerLabel.textContent = '🔥 VIRADA';
+            } else if (audioElements.length > 0) {
+                master = audioElements[0]; timerLabel.textContent = 'TEMPO / LOOP';
             }
-            lastMasterTime = master.currentTime;
 
-            const current = isFillPlaying ? fillAudioElements[0].currentTime : master.currentTime;
+            if (!master) return;
+
+            if (master.duration && !isNaN(master.duration)) {
+                const percent = master.currentTime / master.duration;
+                const offset = CIRCLE_CIRCUMFERENCE - (percent * CIRCLE_CIRCUMFERENCE);
+                circleProgress.style.strokeDashoffset = offset;
+            }
+
+            if (!isFillPlaying && !isEndingPlaying) {
+                if (master.currentTime < lastMasterTime - 0.5) {
+                    if (isEndingArmed) {
+                        dispararFinalizacao();
+                    } else if (isFillArmed) {
+                        dispararVirada();
+                    } else {
+                        audioElements.forEach(a => a.currentTime = master.currentTime);
+                    }
+                }
+                lastMasterTime = master.currentTime;
+            }
+
+            const current = master.currentTime;
             const mins = Math.floor(current / 60).toString().padStart(2, '0');
             const secs = Math.floor(current % 60).toString().padStart(2, '0');
             const ms = Math.floor((current % 1) * 10);
             timerDisplay.textContent = `${mins}:${secs}.${ms}`;
-        }, 80);
+        }, 60);
     }
 
     function dispararVirada() {
         isFillArmed = false; isFillPlaying = true;
-        btnFill.classList.remove('armed'); btnFill.textContent = '🔥 TOCANDO VIRADA...';
+        btnFill.classList.remove('armed'); 
+        circleProgress.classList.remove('armed-fill');
+        circleProgress.classList.add('playing-fill');
+        btnFill.textContent = '🔥 TOCANDO VIRADA...';
 
         audioElements.forEach(a => a.pause());
 
@@ -835,6 +1023,7 @@
         const masterFill = fillAudioElements[0];
         const onFillEnd = () => {
             isFillPlaying = false;
+            circleProgress.classList.remove('playing-fill');
             btnFill.textContent = '🪘 VIRADA / FILL';
             audioElements.forEach(a => { a.currentTime = 0; a.play().catch(e => console.error(e)); });
             masterFill.removeEventListener('ended', onFillEnd);
@@ -842,32 +1031,36 @@
         masterFill.addEventListener('ended', onFillEnd);
     }
 
+    function dispararFinalizacao() {
+        isEndingArmed = false; isEndingPlaying = true;
+        btnStop.classList.remove('armed');
+        circleProgress.classList.remove('armed-ending');
+        circleProgress.classList.add('playing-ending');
+
+        audioElements.forEach(a => a.pause());
+
+        endingAudioElements.forEach(end => {
+            end.currentTime = 0;
+            end.playbackRate = speedSlider.value / 100;
+            applyPitchPreservation(end);
+            end.play().catch(e => console.error(e));
+        });
+
+        const masterEnding = endingAudioElements[0];
+        const onEndingEnd = () => {
+            stopAll();
+            masterEnding.removeEventListener('ended', onEndingEnd);
+            // CARREGAMENTO AUTOMÁTICO DA PRÓXIMA MÚSICA DA PLAYLIST
+            if (playlist.length > 0) {
+                toastMessage.textContent = 'Finalização concluída. Carregando próxima música...';
+                loadNextPlaylistItem();
+            }
+        };
+        masterEnding.addEventListener('ended', onEndingEnd);
+    }
+
     function stopSyncAndTimer() { if (syncInterval) clearInterval(syncInterval); }
     function clearCurrentAudioObjects() { objectUrls.forEach(url => URL.revokeObjectURL(url)); objectUrls = []; }
-
-    btnClearCache.addEventListener('click', async () => {
-        const selectedIndex = trackSelect.value;
-        if (selectedIndex === '') { toastMessage.textContent = 'Selecione uma música.'; return; }
-
-        stopAll(); clearCurrentAudioObjects();
-        const selectedSong = songsData[selectedIndex];
-        
-        try {
-            const cache = await caches.open(CACHE_NAME);
-            let removedCount = 0;
-            for (const track of [...selectedSong.tracks, ...selectedSong.fillTracks]) {
-                if (await cache.delete(track.url)) removedCount++;
-            }
-
-            audioElements = []; fillAudioElements = [];
-            stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione uma música para carregar os canais.</div>';
-            btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true;
-            trackSelect.value = '';
-
-            await updateSelectCacheIndicators();
-            toastMessage.textContent = `Cache de "${selectedSong.name}" limpo! (${removedCount} faixas removidas)`;
-        } catch (e){}
-    });
 
     function updateStatus(text, type) {
         statusBadge.textContent = text;
@@ -879,12 +1072,9 @@
             case 'play': if (!btnPlay.disabled) btnPlay.click(); break;
             case 'fill': if (!btnFill.disabled) btnFill.click(); break;
             case 'stop': if (!btnStop.disabled) btnStop.click(); break;
+            case 'next_track': loadNextPlaylistItem(); break;
             case 'speed_up':
                 speedSlider.value = Math.min(150, parseInt(speedSlider.value) + 5);
-                speedSlider.dispatchEvent(new Event('input'));
-                break;
-            case 'speed_down':
-                speedSlider.value = Math.max(50, parseInt(speedSlider.value) - 5);
                 speedSlider.dispatchEvent(new Event('input'));
                 break;
         }
