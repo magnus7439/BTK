@@ -576,7 +576,7 @@
         circleProgress.className = 'circle-progress';
         circleProgress.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
 
-        timerLabel.textContent = 'TEMPO / LOOP';
+        timerLabel.textContent = 'TEMPO';
         btnPlay.textContent = 'PLAY';
         stopSyncAndTimer();
         timerDisplay.textContent = '00:00.0'; lastMasterTime = 0;
@@ -604,7 +604,7 @@
             } else if (isFillPlaying && fillAudioElements.length > 0) {
                 master = fillAudioElements[0]; timerLabel.textContent = '🔥 VIRADA';
             } else if (audioElements.length > 0) {
-                master = audioElements[0]; timerLabel.textContent = 'TEMPO / LOOP';
+                master = audioElements[0]; timerLabel.textContent = 'TEMPO';
             }
 
             if (!master) return;
