@@ -216,7 +216,7 @@
                 <circle id="circleProgress" class="circle-progress" cx="80" cy="80" r="70"></circle>
             </svg>
             <div class="timer-inner-content">
-                <div id="timerLabel" class="timer-label">TEMPO / LOOP</div>
+                <div id="timerLabel" class="timer-label"> ⏱️ </div>
                 <div id="timerDisplay" class="timer-display">00:00.0</div>
             </div>
         </div>
@@ -224,26 +224,26 @@
 
     <div class="speed-control">
         <div class="speed-header">
-            <span>⏱️ VELOCIDADE</span>
+            <span>Velocidade</span>
             <span id="speedDisplay">100%</span>
         </div>
-        <input type="range" id="speedSlider" min="50" max="150" value="100" step="5">
+        <input type="range" id="speedSlider" min="70" max="130" value="100" step="5">
     </div>
 
     <div class="player-controls">
         <button id="btnPlay" class="btn-play" disabled>PLAY</button>
         <button id="btnStop" class="btn-stop" disabled>STOP</button>
-        <button id="btnFill" class="btn-fill" disabled>🪘 VIRADA / FILL</button>
+        <button id="btnFill" class="btn-fill" disabled>🪘 VIRADA</button>
     </div>
 
     <div id="stemsContainer" class="stems-container">
         <div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">
-            Selecione uma música para carregar os canais.
+            Selecione um ritmo / música para carregar os canais/instrumentos.
         </div>
     </div>
 
     <div id="toastMessage" class="toast">Aguardando ativação...</div>
-    <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudio Selecionado do Cache</button>
+    <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudio Selecionado do Cache </button>
 </div>
 
 <script>
