@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <!-- 
   ==============================================================================
   Para conectar este site a outro Google Sheets / Web App:
-  1. Ir até a tag <script> abaixo (por volta da linha 418).
+  1. Ir até a tag <script> abaixo (por volta da linha 435).
   2. Alterar a constante WEB_APP_URL com a nova URL do Apps Script.
   ==============================================================================
 -->
@@ -165,9 +164,27 @@
         .circle-progress.playing-fill { stroke: var(--fill-color); }
         .circle-progress.playing-ending { stroke: var(--ending-color); }
 
-        .timer-inner-content { position: absolute; display: flex; flex-direction: column; align-items: center; }
-        .timer-label { font-size: 0.7rem; color: var(--subtext-color); }
-        .timer-display { font-size: 1.6rem; font-weight: bold; font-family: monospace; color: var(--text-color); }
+        .timer-inner-content { 
+            position: absolute; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+        }
+
+        .timer-display { 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+            font-family: monospace; 
+            color: var(--text-color); 
+        }
+
+        .loop-display {
+            font-size: 1.3rem;
+            font-weight: bold;
+            font-family: monospace;
+            color: var(--accent-color);
+            margin-left: 6px;
+        }
 
         .playlist-info-badge {
             font-size: 0.8rem; background: #252525; padding: 6px 12px;
@@ -310,8 +327,8 @@
                     <circle id="circleProgress" class="circle-progress" cx="80" cy="80" r="70"></circle>
                 </svg>
                 <div class="timer-inner-content">
-                    <div id="timerLabel" class="timer-label">TEMPO / LOOP</div>
-                    <div id="timerDisplay" class="timer-display">00:00.0</div>
+                    <span id="timerDisplay" class="timer-display">00:00.0</span>
+                    <span id="loopCounter" class="loop-display">1</span>
                 </div>
             </div>
         </div>
@@ -422,7 +439,7 @@
     const licenseKeyInput = document.getElementById('licenseKeyInput');
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
-    const timerLabel = document.getElementById('timerLabel');
+    const loopCounter = document.getElementById('loopCounter');
     const circleProgress = document.getElementById('circleProgress');
     const speedSlider = document.getElementById('speedSlider');
     const speedDisplay = document.getElementById('speedDisplay');
@@ -453,6 +470,7 @@
     let syncInterval = null;
     let lastMasterTime = 0;
     let currentOriginalBpm = null;
+    let currentLoopCount = 1;
 
     const CIRCLE_CIRCUMFERENCE = 440;
 
@@ -954,7 +972,8 @@
         circleProgress.className = 'circle-progress';
         circleProgress.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
 
-        timerLabel.textContent = 'TEMPO / LOOP';
+        currentLoopCount = 1;
+        loopCounter.textContent = '1';
         btnPlay.textContent = 'PLAY';
         stopSyncAndTimer();
         timerDisplay.textContent = '00:00.0'; lastMasterTime = 0;
@@ -978,11 +997,11 @@
             let master = null;
 
             if (isEndingPlaying && endingAudioElements.length > 0) {
-                master = endingAudioElements[0]; timerLabel.textContent = '🏁 FINALIZANDO';
+                master = endingAudioElements[0];
             } else if (isFillPlaying && fillAudioElements.length > 0) {
-                master = fillAudioElements[0]; timerLabel.textContent = '🔥 VIRADA';
+                master = fillAudioElements[0];
             } else if (audioElements.length > 0) {
-                master = audioElements[0]; timerLabel.textContent = 'TEMPO / LOOP';
+                master = audioElements[0];
             }
 
             if (!master) return;
@@ -995,6 +1014,9 @@
 
             if (!isFillPlaying && !isEndingPlaying) {
                 if (master.currentTime < lastMasterTime - 0.5) {
+                    currentLoopCount++;
+                    loopCounter.textContent = currentLoopCount;
+
                     if (isEndingArmed) {
                         dispararFinalizacao();
                     } else if (isFillArmed) {
