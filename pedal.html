@@ -2,7 +2,7 @@
 <!-- 
   ==============================================================================
   Para conectar este site a outro Google Sheets / Web App:
-  1. Ir até a tag <script> abaixo (por volta da linha 418).
+  1. Ir até a tag <script> abaixo (por volta da linha 417).
   2. Alterar a constante WEB_APP_URL com a nova URL do Apps Script.
   ==============================================================================
 -->
@@ -522,7 +522,23 @@
         localStorage.setItem('btk_pedal_config', JSON.stringify(pedalConfig));
     }
 
+    // LIMPEZA AUTOMÁTICA DE CACHES ANTIGOS
+    async function cleanOldCaches() {
+        try {
+            const cacheNames = await caches.keys();
+            for (const name of cacheNames) {
+                if (name.startsWith('btk-audio-cache-') && name !== CACHE_NAME) {
+                    await caches.delete(name);
+                    console.log(`Cache antigo removido automaticamente: ${name}`);
+                }
+            }
+        } catch (e) {
+            console.error('Erro ao apagar caches antigos:', e);
+        }
+    }
+
     async function initApp() {
+        await cleanOldCaches();
         loadPedalConfig();
         loadPlaylistFromStorage();
         await loadSongs();
