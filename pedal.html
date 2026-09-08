@@ -2,7 +2,7 @@
 <!-- 
   ==============================================================================
   Para conectar este site a outro Google Sheets / Web App:
-  1. Ir até a tag <script> abaixo (por volta da linha 435).
+  1. Ir até a tag <script> abaixo (por volta da linha 436).
   2. Alterar a constante WEB_APP_URL com a nova URL do Apps Script.
   ==============================================================================
 -->
@@ -159,7 +159,8 @@
         .circle-progress {
             fill: none; stroke: var(--accent-color); stroke-width: 10;
             stroke-dasharray: 440; stroke-dashoffset: 440;
-            stroke-linecap: round; transition: stroke-dashoffset 0.08s linear, stroke 0.3s;
+            stroke-linecap: round; 
+            transition: stroke-dashoffset 0.06s linear, stroke 0.3s linear;
         }
         .circle-progress.playing-fill { stroke: var(--fill-color); }
         .circle-progress.playing-ending { stroke: var(--ending-color); }
@@ -958,6 +959,16 @@
         startSyncAndTimer();
     }
 
+    function pauseAll() {
+        audioElements.forEach(audio => audio.pause());
+        fillAudioElements.forEach(audio => audio.pause());
+        endingAudioElements.forEach(audio => audio.pause());
+
+        isPlaying = false;
+        btnPlay.textContent = 'PLAY';
+        stopSyncAndTimer();
+    }
+
     function stopAll() {
         audioElements.forEach(audio => { audio.pause(); audio.currentTime = 0; });
         fillAudioElements.forEach(audio => { audio.pause(); audio.currentTime = 0; });
@@ -1028,10 +1039,13 @@
                 lastMasterTime = master.currentTime;
             }
 
-            const current = master.currentTime;
-            const mins = Math.floor(current / 60).toString().padStart(2, '0');
-            const secs = Math.floor(current % 60).toString().padStart(2, '0');
-            const ms = Math.floor((current % 1) * 10);
+            // Cálculo do Tempo Regressivo
+            const duration = master.duration || 0;
+            const remaining = Math.max(0, duration - master.currentTime);
+            
+            const mins = Math.floor(remaining / 60).toString().padStart(2, '0');
+            const secs = Math.floor(remaining % 60).toString().padStart(2, '0');
+            const ms = Math.floor((remaining % 1) * 10);
             timerDisplay.textContent = `${mins}:${secs}.${ms}`;
         }, 60);
     }
