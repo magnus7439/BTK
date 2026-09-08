@@ -2,7 +2,7 @@
 <!-- 
   ==============================================================================
   Para conectar este site a outro Google Sheets / Web App:
-  1. Ir até a tag <script> abaixo (por volta da linha 436).
+  1. Ir até a tag <script> abaixo (por volta da linha 430).
   2. Alterar a constante WEB_APP_URL com a nova URL do Apps Script.
   ==============================================================================
 -->
@@ -46,12 +46,12 @@
             width: 100%;
             max-width: 480px;
             background: var(--card-bg);
-            padding: 24px;
+            padding: 20px;
             border-radius: 16px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
             position: relative;
         }
 
@@ -97,7 +97,7 @@
 
         .tab-btn {
             flex: 1;
-            padding: 10px 4px;
+            padding: 8px 4px;
             font-size: 0.8rem;
             font-weight: bold;
             background: transparent;
@@ -113,7 +113,7 @@
             color: #000;
         }
 
-        .tab-content { display: none; flex-direction: column; gap: 16px; }
+        .tab-content { display: none; flex-direction: column; gap: 12px; }
         .tab-content.active { display: flex; }
 
         .header {
@@ -121,10 +121,10 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #333;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
         }
 
-        .header h2 { margin: 0; font-size: 1.2rem; }
+        .header h2 { margin: 0; font-size: 1.1rem; }
 
         .status-badge {
             font-size: 0.75rem; padding: 4px 8px;
@@ -135,76 +135,72 @@
         .status-badge.offline { background: rgba(244, 67, 54, 0.2); color: var(--error-color); }
 
         select {
-            width: 100%; padding: 14px; font-size: 0.95rem;
+            width: 100%; padding: 12px; font-size: 0.95rem;
             background: #2a2a2a; color: var(--text-color);
             border: 2px solid #444; border-radius: 12px;
             outline: none; cursor: pointer;
         }
 
+        /* TIMER LINEAR COMPACTO */
         .timer-box {
             text-align: center; background: #181818;
-            padding: 14px; border-radius: 16px;
-            display: flex; flex-direction: column; align-items: center; gap: 6px;
-            position: relative;
+            padding: 10px 14px; border-radius: 12px;
+            display: flex; flex-direction: column; gap: 8px;
         }
-
-        .circle-container {
-            position: relative;
-            width: 130px; height: 130px;
-            display: flex; justify-content: center; align-items: center;
-        }
-
-        .circle-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        .circle-bg { fill: none; stroke: #2a2a2a; stroke-width: 10; }
-        .circle-progress {
-            fill: none; stroke: var(--accent-color); stroke-width: 10;
-            stroke-dasharray: 440; stroke-dashoffset: 440;
-            stroke-linecap: round; 
-            transition: stroke-dashoffset 0.06s linear, stroke 0.3s linear;
-        }
-        .circle-progress.playing-fill { stroke: var(--fill-color); }
-        .circle-progress.playing-ending { stroke: var(--ending-color); }
 
         .timer-inner-content { 
-            position: absolute; 
             display: flex; 
             justify-content: center; 
             align-items: center; 
         }
 
         .timer-display { 
-            font-size: 1.5rem; 
+            font-size: 1.8rem; 
             font-weight: bold; 
             font-family: monospace; 
             color: var(--text-color); 
         }
 
         .loop-display {
-            font-size: 1.3rem;
+            font-size: 1.5rem;
             font-weight: bold;
             font-family: monospace;
             color: var(--accent-color);
-            margin-left: 6px;
+            margin-left: 10px;
         }
+
+        .progress-bar-bg {
+            width: 100%; height: 8px;
+            background: #2a2a2a; border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%; width: 0%;
+            background: var(--accent-color);
+            transition: width 0.06s linear, background-color 0.3s linear;
+        }
+        .progress-bar-fill.playing-fill { background: var(--fill-color); }
+        .progress-bar-fill.playing-ending { background: var(--ending-color); }
 
         .playlist-info-badge {
             font-size: 0.8rem; background: #252525; padding: 6px 12px;
             border-radius: 20px; color: var(--accent-color); border: 1px solid #333;
         }
 
-        .speed-control { display: flex; flex-direction: column; gap: 6px; }
-        .speed-header { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: bold; }
+        .speed-control { display: flex; flex-direction: column; gap: 4px; }
+        .speed-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; }
 
         input[type="range"] {
-            width: 100%; height: 14px; border-radius: 8px;
+            width: 100%; height: 10px; border-radius: 8px;
             accent-color: var(--accent-color); cursor: pointer;
         }
 
-        .player-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .player-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
         button {
-            padding: 14px; font-size: 0.95rem; font-weight: bold;
-            border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s;
+            padding: 12px; font-size: 0.9rem; font-weight: bold;
+            border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s;
         }
         button:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -214,19 +210,19 @@
         
         .btn-fill {
             background: var(--fill-color); color: #fff;
-            grid-column: span 2; font-size: 1rem;
+            grid-column: span 2; font-size: 0.95rem;
         }
         .btn-fill.armed { animation: pulse 0.8s infinite alternate; background: #ff5252; }
 
         .btn-add-playlist {
-            background: #2e7d32; color: #fff; padding: 12px;
-            font-size: 0.85rem; border-radius: 10px; font-weight: bold;
+            background: #2e7d32; color: #fff; padding: 10px;
+            font-size: 0.8rem; border-radius: 8px; font-weight: bold;
         }
 
         .btn-clear-cache {
             background: transparent; color: var(--subtext-color);
-            border: 1px solid #444; padding: 10px 12px;
-            font-size: 0.8rem; border-radius: 8px; margin-top: 4px;
+            border: 1px solid #444; padding: 8px 10px;
+            font-size: 0.75rem; border-radius: 8px;
             cursor: pointer; transition: all 0.2s;
         }
         .btn-clear-cache:hover { background: #2a2a2a; color: var(--text-color); }
@@ -237,54 +233,54 @@
         }
 
         .stems-container {
-            display: flex; flex-direction: column; gap: 8px;
-            background: #181818; padding: 10px; border-radius: 12px;
+            display: flex; flex-direction: column; gap: 6px;
+            background: #181818; padding: 8px; border-radius: 10px;
             max-height: 180px; overflow-y: auto;
         }
 
         .stem-row {
             display: flex; justify-content: space-between; align-items: center;
-            background: #2a2a2a; padding: 8px 12px; border-radius: 8px;
+            background: #2a2a2a; padding: 6px 10px; border-radius: 6px;
         }
 
-        .btn-toggle { padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; min-width: 60px; }
+        .btn-toggle { padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; min-width: 50px; }
         .btn-toggle.on { background: var(--success-color); color: #fff; }
         .btn-toggle.off { background: var(--btn-off); color: var(--subtext-color); }
 
         .playlist-container {
-            display: flex; flex-direction: column; gap: 10px;
+            display: flex; flex-direction: column; gap: 8px;
             max-height: 320px; overflow-y: auto;
         }
 
         .playlist-item {
-            background: #181818; border: 1px solid #333; padding: 10px 14px;
-            border-radius: 10px; display: flex; justify-content: space-between; align-items: center;
+            background: #181818; border: 1px solid #333; padding: 8px 12px;
+            border-radius: 8px; display: flex; justify-content: space-between; align-items: center;
         }
 
         .playlist-item.active {
             border-color: var(--accent-color); background: rgba(255, 152, 0, 0.1);
         }
 
-        .playlist-item-title { font-size: 0.9rem; font-weight: bold; }
-        .playlist-item-actions { display: flex; gap: 6px; }
+        .playlist-item-title { font-size: 0.85rem; font-weight: bold; }
+        .playlist-item-actions { display: flex; gap: 4px; }
 
         .btn-mini {
-            padding: 6px 10px; font-size: 0.75rem; border-radius: 6px; background: #333; color: #fff;
+            padding: 4px 8px; font-size: 0.7rem; border-radius: 4px; background: #333; color: #fff;
         }
 
-        .pedal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .pedal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .pedal-card {
-            background: #181818; padding: 10px; border-radius: 10px;
-            border: 1px solid #333; display: flex; flex-direction: column; gap: 6px;
+            background: #181818; padding: 8px; border-radius: 8px;
+            border: 1px solid #333; display: flex; flex-direction: column; gap: 4px;
         }
-        .pedal-title { font-size: 0.85rem; font-weight: bold; color: var(--accent-color); display: flex; justify-content: space-between; }
-        .pedal-key-badge { font-size: 0.7rem; background: #333; padding: 2px 6px; border-radius: 4px; color: var(--subtext-color); }
+        .pedal-title { font-size: 0.8rem; font-weight: bold; color: var(--accent-color); display: flex; justify-content: space-between; }
+        .pedal-key-badge { font-size: 0.65rem; background: #333; padding: 2px 4px; border-radius: 4px; color: var(--subtext-color); }
         .test-box {
-            background: #181818; border: 2px dashed #444; padding: 12px;
-            border-radius: 10px; text-align: center; font-size: 0.8rem; color: var(--subtext-color);
+            background: #181818; border: 2px dashed #444; padding: 10px;
+            border-radius: 8px; text-align: center; font-size: 0.75rem; color: var(--subtext-color);
         }
         .test-box.active { border-color: var(--success-color); color: var(--success-color); font-weight: bold; }
-        .toast { font-size: 0.8rem; text-align: center; color: var(--subtext-color); min-height: 18px; }
+        .toast { font-size: 0.75rem; text-align: center; color: var(--subtext-color); min-height: 16px; }
     </style>
 </head>
 <body>
@@ -321,16 +317,14 @@
             📍 Sequência do Show: <b id="playlistPosText">0 / 0</b>
         </div>
 
+        <!-- PAINEL DE TEMPO COMPACTO COM BARRA LINEAR -->
         <div class="timer-box">
-            <div class="circle-container">
-                <svg class="circle-svg" viewBox="0 0 160 160">
-                    <circle class="circle-bg" cx="80" cy="80" r="70"></circle>
-                    <circle id="circleProgress" class="circle-progress" cx="80" cy="80" r="70"></circle>
-                </svg>
-                <div class="timer-inner-content">
-                    <span id="timerDisplay" class="timer-display">00:00.0</span>
-                    <span id="loopCounter" class="loop-display">1</span>
-                </div>
+            <div class="timer-inner-content">
+                <span id="timerDisplay" class="timer-display">00:00.0</span>
+                <span id="loopCounter" class="loop-display">1</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div id="progressBarFill" class="progress-bar-fill"></div>
             </div>
         </div>
 
@@ -441,7 +435,7 @@
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
     const loopCounter = document.getElementById('loopCounter');
-    const circleProgress = document.getElementById('circleProgress');
+    const progressBarFill = document.getElementById('progressBarFill');
     const speedSlider = document.getElementById('speedSlider');
     const speedDisplay = document.getElementById('speedDisplay');
     const btnPlay = document.getElementById('btnPlay');
@@ -472,8 +466,6 @@
     let lastMasterTime = 0;
     let currentOriginalBpm = null;
     let currentLoopCount = 1;
-
-    const CIRCLE_CIRCUMFERENCE = 440;
 
     let pedalConfig = {
         'pageup': 'stop',
@@ -925,11 +917,11 @@
         if (!isPlaying || fillAudioElements.length === 0) return;
         if (!isFillArmed) {
             isFillArmed = true; btnFill.classList.add('armed');
-            circleProgress.classList.add('armed-fill');
+            progressBarFill.classList.add('playing-fill');
             btnFill.textContent = '⏳ VIRADA AGENDADA...';
         } else {
             isFillArmed = false; btnFill.classList.remove('armed');
-            circleProgress.classList.remove('armed-fill');
+            progressBarFill.classList.remove('playing-fill');
             btnFill.textContent = '🪘 VIRADA / FILL';
         }
     });
@@ -937,7 +929,7 @@
     btnStop.addEventListener('click', () => {
         if (isPlaying && endingAudioElements.length > 0 && !isEndingArmed) {
             isEndingArmed = true; btnStop.classList.add('armed');
-            circleProgress.classList.add('armed-ending');
+            progressBarFill.classList.add('playing-ending');
             btnStop.textContent = '⏳ FINALIZANDO...';
         } else {
             stopAll();
@@ -980,8 +972,8 @@
         btnFill.classList.remove('armed'); btnFill.textContent = '🪘 VIRADA / FILL';
         btnStop.classList.remove('armed'); btnStop.textContent = 'STOP';
         
-        circleProgress.className = 'circle-progress';
-        circleProgress.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
+        progressBarFill.className = 'progress-bar-fill';
+        progressBarFill.style.width = '0%';
 
         currentLoopCount = 1;
         loopCounter.textContent = '1';
@@ -1017,10 +1009,10 @@
 
             if (!master) return;
 
+            // Atualização da Barra Linear
             if (master.duration && !isNaN(master.duration)) {
-                const percent = master.currentTime / master.duration;
-                const offset = CIRCLE_CIRCUMFERENCE - (percent * CIRCLE_CIRCUMFERENCE);
-                circleProgress.style.strokeDashoffset = offset;
+                const percent = (master.currentTime / master.duration) * 100;
+                progressBarFill.style.width = `${percent}%`;
             }
 
             if (!isFillPlaying && !isEndingPlaying) {
@@ -1053,8 +1045,7 @@
     function dispararVirada() {
         isFillArmed = false; isFillPlaying = true;
         btnFill.classList.remove('armed'); 
-        circleProgress.classList.remove('armed-fill');
-        circleProgress.classList.add('playing-fill');
+        progressBarFill.classList.remove('playing-fill');
         btnFill.textContent = '🔥 TOCANDO VIRADA...';
 
         audioElements.forEach(a => a.pause());
@@ -1069,7 +1060,7 @@
         const masterFill = fillAudioElements[0];
         const onFillEnd = () => {
             isFillPlaying = false;
-            circleProgress.classList.remove('playing-fill');
+            progressBarFill.classList.remove('playing-fill');
             btnFill.textContent = '🪘 VIRADA / FILL';
             audioElements.forEach(a => { a.currentTime = 0; a.play().catch(e => console.error(e)); });
             masterFill.removeEventListener('ended', onFillEnd);
@@ -1080,8 +1071,7 @@
     function dispararFinalizacao() {
         isEndingArmed = false; isEndingPlaying = true;
         btnStop.classList.remove('armed');
-        circleProgress.classList.remove('armed-ending');
-        circleProgress.classList.add('playing-ending');
+        progressBarFill.classList.remove('playing-ending');
 
         audioElements.forEach(a => a.pause());
 
