@@ -39,12 +39,12 @@
             width: 100%;
             max-width: 480px;
             background: var(--card-bg);
-            padding: 24px;
+            padding: 20px;
             border-radius: 16px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
             position: relative;
         }
 
@@ -85,10 +85,10 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #333;
-            padding-bottom: 10px;
+            padding-bottom: 8px;
         }
 
-        .header h2 { margin: 0; font-size: 1.2rem; }
+        .header h2 { margin: 0; font-size: 1.1rem; }
 
         .status-badge {
             font-size: 0.75rem; padding: 4px 8px;
@@ -99,52 +99,67 @@
         .status-badge.offline { background: rgba(244, 67, 54, 0.2); color: var(--error-color); }
 
         select {
-            width: 100%; padding: 14px; font-size: 0.95rem;
+            width: 100%; padding: 12px; font-size: 0.95rem;
             background: #2a2a2a; color: var(--text-color);
             border: 2px solid #444; border-radius: 12px;
             outline: none; cursor: pointer;
         }
 
+        /* PAINEL DE TEMPO COMPACTO COM BARRA LINEAR */
         .timer-box {
             text-align: center; background: #181818;
-            padding: 14px; border-radius: 16px;
-            display: flex; flex-direction: column; align-items: center; gap: 6px;
-            position: relative;
+            padding: 10px 14px; border-radius: 12px;
+            display: flex; flex-direction: column; gap: 8px;
         }
 
-        .circle-container {
-            position: relative;
-            width: 140px; height: 140px;
-            display: flex; justify-content: center; align-items: center;
+        .timer-inner-content { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
         }
 
-        .circle-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        .circle-bg { fill: none; stroke: #2a2a2a; stroke-width: 10; }
-        .circle-progress {
-            fill: none; stroke: var(--accent-color); stroke-width: 10;
-            stroke-dasharray: 440; stroke-dashoffset: 440;
-            stroke-linecap: round; transition: stroke-dashoffset 0.08s linear, stroke 0.3s;
+        .timer-display { 
+            font-size: 1.8rem; 
+            font-weight: bold; 
+            font-family: monospace; 
+            color: var(--text-color); 
         }
-        .circle-progress.playing-fill { stroke: var(--fill-color); }
-        .circle-progress.playing-ending { stroke: var(--ending-color); }
 
-        .timer-inner-content { position: absolute; display: flex; flex-direction: column; align-items: center; }
-        .timer-label { font-size: 0.7rem; color: var(--subtext-color); }
-        .timer-display { font-size: 1.7rem; font-weight: bold; font-family: monospace; color: var(--text-color); }
+        .loop-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            font-family: monospace;
+            color: var(--accent-color);
+            margin-left: 10px;
+        }
 
-        .speed-control { display: flex; flex-direction: column; gap: 6px; }
-        .speed-header { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: bold; }
+        .progress-bar-bg {
+            width: 100%; height: 8px;
+            background: #2a2a2a; border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%; width: 0%;
+            background: var(--accent-color);
+            transition: width 0.06s linear, background-color 0.3s linear;
+        }
+        .progress-bar-fill.playing-fill { background: var(--fill-color); }
+        .progress-bar-fill.playing-ending { background: var(--ending-color); }
+
+        .speed-control { display: flex; flex-direction: column; gap: 4px; }
+        .speed-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; }
 
         input[type="range"] {
-            width: 100%; height: 14px; border-radius: 8px;
+            width: 100%; height: 10px; border-radius: 8px;
             accent-color: var(--accent-color); cursor: pointer;
         }
 
-        .player-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .player-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
         button {
-            padding: 14px; font-size: 0.95rem; font-weight: bold;
-            border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s;
+            padding: 12px; font-size: 0.9rem; font-weight: bold;
+            border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s;
         }
         button:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -154,15 +169,17 @@
         
         .btn-fill {
             background: var(--fill-color); color: #fff;
-            grid-column: span 2; font-size: 1rem;
+            grid-column: span 2; font-size: 0.95rem;
         }
         .btn-fill.armed { animation: pulse 0.8s infinite alternate; background: #ff5252; }
 
         .btn-clear-cache {
             background: transparent; color: var(--subtext-color);
-            border: 1px solid #444; padding: 10px 12px;
-            font-size: 0.8rem; border-radius: 8px; margin-top: 5px;
+            border: 1px solid #444; padding: 8px 10px;
+            font-size: 0.75rem; border-radius: 8px;
+            cursor: pointer; transition: all 0.2s;
         }
+        .btn-clear-cache:hover { background: #2a2a2a; color: var(--text-color); }
 
         @keyframes pulse {
             from { opacity: 1; transform: scale(1); }
@@ -170,21 +187,21 @@
         }
 
         .stems-container {
-            display: flex; flex-direction: column; gap: 8px;
-            background: #181818; padding: 10px; border-radius: 12px;
-            max-height: 200px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 6px;
+            background: #181818; padding: 8px; border-radius: 10px;
+            max-height: 180px; overflow-y: auto;
         }
 
         .stem-row {
             display: flex; justify-content: space-between; align-items: center;
-            background: #2a2a2a; padding: 8px 12px; border-radius: 8px;
+            background: #2a2a2a; padding: 6px 10px; border-radius: 6px;
         }
 
-        .btn-toggle { padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; min-width: 60px; }
+        .btn-toggle { padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; min-width: 50px; }
         .btn-toggle.on { background: var(--success-color); color: #fff; }
         .btn-toggle.off { background: var(--btn-off); color: var(--subtext-color); }
 
-        .toast { font-size: 0.8rem; text-align: center; color: var(--subtext-color); min-height: 18px; }
+        .toast { font-size: 0.75rem; text-align: center; color: var(--subtext-color); min-height: 16px; }
     </style>
 </head>
 <body>
@@ -209,16 +226,14 @@
         </select>
     </div>
 
+    <!-- PAINEL DE TEMPO COMPACTO COM BARRA LINEAR -->
     <div class="timer-box">
-        <div class="circle-container">
-            <svg class="circle-svg" viewBox="0 0 160 160">
-                <circle class="circle-bg" cx="80" cy="80" r="70"></circle>
-                <circle id="circleProgress" class="circle-progress" cx="80" cy="80" r="70"></circle>
-            </svg>
-            <div class="timer-inner-content">
-                <div id="timerLabel" class="timer-label"> ⏱️ </div>
-                <div id="timerDisplay" class="timer-display">00:00.0</div>
-            </div>
+        <div class="timer-inner-content">
+            <span id="timerDisplay" class="timer-display">00:00.0</span>
+            <span id="loopCounter" class="loop-display">1</span>
+        </div>
+        <div class="progress-bar-bg">
+            <div id="progressBarFill" class="progress-bar-fill"></div>
         </div>
     </div>
 
@@ -243,7 +258,7 @@
     </div>
 
     <div id="toastMessage" class="toast">Aguardando ativação...</div>
-    <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudio Selecionado do Cache </button>
+    <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudio Selecionado do Cache</button>
 </div>
 
 <script>
@@ -255,8 +270,8 @@
     const licenseKeyInput = document.getElementById('licenseKeyInput');
     const trackSelect = document.getElementById('trackSelect');
     const timerDisplay = document.getElementById('timerDisplay');
-    const timerLabel = document.getElementById('timerLabel');
-    const circleProgress = document.getElementById('circleProgress');
+    const loopCounter = document.getElementById('loopCounter');
+    const progressBarFill = document.getElementById('progressBarFill');
     const speedSlider = document.getElementById('speedSlider');
     const speedDisplay = document.getElementById('speedDisplay');
     const btnPlay = document.getElementById('btnPlay');
@@ -267,22 +282,38 @@
     const statusBadge = document.getElementById('status');
     const toastMessage = document.getElementById('toastMessage');
 
+    // WEB AUDIO API CONTEXT
+    let audioCtx = null;
+    function getAudioContext() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        return audioCtx;
+    }
+
     let songsData = [];
-    let audioElements = [];
-    let fillAudioElements = [];
-    let endingAudioElements = [];
-    let objectUrls = [];
+
+    // ESTRUTURAS DE CANAIS
+    let stemsData = [];      // { name, buffer, gainNode, sourceNode, isMuted }
+    let fillData = [];       // { buffer }
+    let endingData = [];     // { buffer }
 
     let isPlaying = false;
     let isFillArmed = false;
     let isFillPlaying = false;
     let isEndingArmed = false;
     let isEndingPlaying = false;
+
+    let startTime = 0;       // Momento do audioCtx em que o áudio começou a tocar
+    let startOffset = 0;     // Posição acumulada ao pausar (em segundos)
+    let masterDuration = 0;  // Duração exata do loop mestre em segundos
+    let currentLoopCount = 1;
     let syncInterval = null;
     let lastMasterTime = 0;
     let currentOriginalBpm = null;
-
-    const CIRCLE_CIRCUMFERENCE = 440;
 
     function checkLicense() {
         const savedKey = localStorage.getItem('btk_license_key');
@@ -379,40 +410,20 @@
         } catch (e){}
     }
 
-    async function getAudioBlobUrl(url) {
-        try {
-            const cache = await caches.open(CACHE_NAME);
-            let response = await cache.match(url);
+    // CARREGA O ÁUDIO E O DECODIFICA EM UM BUFFER DA WEB AUDIO API (PERFECT SEAMLESS LOOP)
+    async function loadAudioBuffer(url) {
+        const ctx = getAudioContext();
+        const cache = await caches.open(CACHE_NAME);
+        let response = await cache.match(url);
 
-            if (!response) {
-                toastMessage.textContent = 'Baixando áudio para o cache local...';
-                response = await fetch(url);
-                if (response.ok) cache.put(url, response.clone());
-            }
-
-            const blob = await response.blob();
-            const objUrl = URL.createObjectURL(blob);
-            objectUrls.push(objUrl);
-            return objUrl;
-        } catch (err) {
-            return url;
+        if (!response) {
+            toastMessage.textContent = 'Baixando áudio para o cache local...';
+            response = await fetch(url);
+            if (response.ok) cache.put(url, response.clone());
         }
-    }
 
-    function waitForAudioReady(audio) {
-        return new Promise((resolve) => {
-            if (audio.readyState >= 3) resolve();
-            else {
-                audio.addEventListener('canplaythrough', resolve, { once: true });
-                setTimeout(resolve, 3500);
-            }
-        });
-    }
-
-    function applyPitchPreservation(audio) {
-        audio.preservesPitch = true;
-        audio.webkitPreservesPitch = true;
-        audio.mozPreservesPitch = true;
+        const arrayBuffer = await response.arrayBuffer();
+        return await ctx.decodeAudioData(arrayBuffer);
     }
 
     function updateSpeedDisplay() {
@@ -427,7 +438,6 @@
 
     trackSelect.addEventListener('change', async (e) => {
         stopAll();
-        clearCurrentAudioObjects();
 
         const index = e.target.value;
         if (index === '') {
@@ -442,28 +452,28 @@
 
         btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true;
         stemsContainer.innerHTML = '';
-        audioElements = []; fillAudioElements = []; endingAudioElements = [];
+        stemsData = []; fillData = []; endingData = [];
 
         try {
+            const ctx = getAudioContext();
+
             // Filtra e exibe APENAS os loops principais (oculta viradas e fins da lista visual)
             for (let i = 0; i < selectedSong.tracks.length; i++) {
                 const track = selectedSong.tracks[i];
                 
-                // Pula a criação de botão visual se for uma track de virada/fim
                 const lowerName = track.name.toLowerCase();
                 if (lowerName.includes('_vira') || lowerName.includes('_fill') || lowerName.includes('_fim') || lowerName.includes('_final')) {
                     continue;
                 }
 
-                toastMessage.textContent = `Carregando ${track.name} (${i + 1}/${selectedSong.tracks.length})...`;
+                toastMessage.textContent = `Decodificando ${track.name} (${i + 1}/${selectedSong.tracks.length})...`;
                 
-                const audioSource = await getAudioBlobUrl(track.url);
-                const audio = new Audio(audioSource);
-                audio.loop = true; audio.preload = 'auto'; audio.volume = 1;
+                const buffer = await loadAudioBuffer(track.url);
+                const gainNode = ctx.createGain();
+                gainNode.gain.value = 1;
 
-                applyPitchPreservation(audio);
-                await waitForAudioReady(audio);
-                audioElements.push(audio);
+                gainNode.connect(ctx.destination);
+                stemsData.push({ name: track.name, buffer: buffer, gainNode: gainNode, sourceNode: null, isMuted: false });
 
                 const row = document.createElement('div');
                 row.className = 'stem-row';
@@ -477,10 +487,12 @@
                 toggleBtn.textContent = 'ON';
 
                 toggleBtn.addEventListener('click', () => {
-                    if (audio.volume > 0) {
-                        audio.volume = 0; toggleBtn.textContent = 'OFF'; toggleBtn.className = 'btn-toggle off';
+                    if (gainNode.gain.value > 0) {
+                        gainNode.gain.value = 0; toggleBtn.textContent = 'OFF'; toggleBtn.className = 'btn-toggle off';
+                        stemsData[stemsData.length - 1].isMuted = true;
                     } else {
-                        audio.volume = 1; toggleBtn.textContent = 'ON'; toggleBtn.className = 'btn-toggle on';
+                        gainNode.gain.value = 1; toggleBtn.textContent = 'ON'; toggleBtn.className = 'btn-toggle on';
+                        stemsData[stemsData.length - 1].isMuted = false;
                     }
                 });
 
@@ -488,15 +500,15 @@
                 stemsContainer.appendChild(row);
             }
 
+            masterDuration = stemsData[0].buffer.duration;
+
             // Carrega viradas em segundo plano (sem criar linhas na tela)
             if (selectedSong.fillTracks && selectedSong.fillTracks.length > 0) {
                 for (let f = 0; f < selectedSong.fillTracks.length; f++) {
-                    const fillSource = await getAudioBlobUrl(selectedSong.fillTracks[f].url);
-                    const fillAudio = new Audio(fillSource);
-                    fillAudio.loop = false; fillAudio.preload = 'auto';
-                    applyPitchPreservation(fillAudio);
-                    await waitForAudioReady(fillAudio);
-                    fillAudioElements.push(fillAudio);
+                    const fillBuffer = await loadAudioBuffer(selectedSong.fillTracks[f].url);
+                    const fillGain = ctx.createGain();
+                    fillGain.connect(ctx.destination);
+                    fillData.push({ buffer: fillBuffer, gainNode: fillGain, sourceNode: null });
                 }
                 btnFill.disabled = false;
             } else {
@@ -506,12 +518,10 @@
             // Carrega finalizações em segundo plano (sem criar linhas na tela)
             if (selectedSong.endingTracks && selectedSong.endingTracks.length > 0) {
                 for (let e = 0; e < selectedSong.endingTracks.length; e++) {
-                    const endSource = await getAudioBlobUrl(selectedSong.endingTracks[e].url);
-                    const endAudio = new Audio(endSource);
-                    endAudio.loop = false; endAudio.preload = 'auto';
-                    applyPitchPreservation(endAudio);
-                    await waitForAudioReady(endAudio);
-                    endingAudioElements.push(endAudio);
+                    const endBuffer = await loadAudioBuffer(selectedSong.endingTracks[e].url);
+                    const endGain = ctx.createGain();
+                    endGain.connect(ctx.destination);
+                    endingData.push({ buffer: endBuffer, gainNode: endGain, sourceNode: null });
                 }
             }
 
@@ -520,27 +530,28 @@
             await updateSelectCacheIndicators();
 
         } catch (err) {
-            toastMessage.textContent = 'Erro ao carregar canais.';
+            toastMessage.textContent = 'Erro ao carregar e decodificar os canais.';
+            console.error(err);
         }
     });
 
     btnFill.addEventListener('click', () => {
-        if (!isPlaying || fillAudioElements.length === 0) return;
+        if (!isPlaying || fillData.length === 0) return;
         if (!isFillArmed) {
             isFillArmed = true; btnFill.classList.add('armed');
-            circleProgress.classList.add('armed-fill');
+            progressBarFill.classList.add('playing-fill');
             btnFill.textContent = '⏳ VIRADA AGENDADA...';
         } else {
             isFillArmed = false; btnFill.classList.remove('armed');
-            circleProgress.classList.remove('armed-fill');
-            btnFill.textContent = '🪘 VIRADA / FILL';
+            progressBarFill.classList.remove('playing-fill');
+            btnFill.textContent = '🪘 VIRADA';
         }
     });
 
     btnStop.addEventListener('click', () => {
-        if (isPlaying && endingAudioElements.length > 0 && !isEndingArmed) {
+        if (isPlaying && endingData.length > 0 && !isEndingArmed) {
             isEndingArmed = true; btnStop.classList.add('armed');
-            circleProgress.classList.add('armed-ending');
+            progressBarFill.classList.add('playing-ending');
             btnStop.textContent = '⏳ FINALIZANDO...';
         } else {
             stopAll();
@@ -548,35 +559,83 @@
     });
 
     function playAll() {
-        if (audioElements.length === 0) return;
-        const masterTime = audioElements[0].currentTime;
+        if (stemsData.length === 0) return;
+        const ctx = getAudioContext();
+        const rate = parseInt(speedSlider.value) / 100;
 
-        audioElements.forEach(audio => {
-            audio.currentTime = masterTime;
-            audio.playbackRate = speedSlider.value / 100;
-            applyPitchPreservation(audio);
-            audio.play().catch(e => console.error(e));
+        startTime = ctx.currentTime - (startOffset / rate);
+
+        stemsData.forEach(stem => {
+            if (stem.sourceNode) { try { stem.sourceNode.stop(); } catch(e){} }
+            
+            const source = ctx.createBufferSource();
+            source.buffer = stem.buffer;
+            source.loop = true;
+            source.playbackRate.value = rate;
+            source.connect(stem.gainNode);
+            
+            const offset = startOffset % stem.buffer.duration;
+            source.start(0, offset);
+            stem.sourceNode = source;
         });
 
-        isPlaying = true; btnPlay.textContent = 'PAUSE';
+        isPlaying = true; 
+        btnPlay.textContent = 'PAUSE';
         startSyncAndTimer();
     }
 
+    function pauseAll() {
+        if (!isPlaying) return;
+        const ctx = getAudioContext();
+        const rate = parseInt(speedSlider.value) / 100;
+        
+        startOffset = (ctx.currentTime - startTime) * rate;
+
+        stemsData.forEach(stem => {
+            if (stem.sourceNode) {
+                try { stem.sourceNode.stop(); } catch(e){}
+                stem.sourceNode = null;
+            }
+        });
+
+        isPlaying = false;
+        btnPlay.textContent = 'PLAY';
+        stopSyncAndTimer();
+    }
+
     function stopAll() {
-        audioElements.forEach(audio => { audio.pause(); audio.currentTime = 0; });
-        fillAudioElements.forEach(audio => { audio.pause(); audio.currentTime = 0; });
-        endingAudioElements.forEach(audio => { audio.pause(); audio.currentTime = 0; });
+        stemsData.forEach(stem => {
+            if (stem.sourceNode) {
+                try { stem.sourceNode.stop(); } catch(e){}
+                stem.sourceNode = null;
+            }
+        });
+
+        fillData.forEach(fill => {
+            if (fill.sourceNode) {
+                try { fill.sourceNode.stop(); } catch(e){}
+                fill.sourceNode = null;
+            }
+        });
+
+        endingData.forEach(end => {
+            if (end.sourceNode) {
+                try { end.sourceNode.stop(); } catch(e){}
+                end.sourceNode = null;
+            }
+        });
 
         isPlaying = false; isFillArmed = false; isFillPlaying = false;
         isEndingArmed = false; isEndingPlaying = false;
+        startOffset = 0; currentLoopCount = 1;
 
-        btnFill.classList.remove('armed'); btnFill.textContent = '🪘 VIRADA / FILL';
+        btnFill.classList.remove('armed'); btnFill.textContent = '🪘 VIRADA';
         btnStop.classList.remove('armed'); btnStop.textContent = 'STOP';
         
-        circleProgress.className = 'circle-progress';
-        circleProgress.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
+        progressBarFill.className = 'progress-bar-fill';
+        progressBarFill.style.width = '0%';
 
-        timerLabel.textContent = 'TEMPO';
+        loopCounter.textContent = '1';
         btnPlay.textContent = 'PLAY';
         stopSyncAndTimer();
         timerDisplay.textContent = '00:00.0'; lastMasterTime = 0;
@@ -587,114 +646,129 @@
     speedSlider.addEventListener('input', (e) => {
         updateSpeedDisplay();
         const rate = parseInt(e.target.value) / 100;
-        audioElements.forEach(audio => { audio.playbackRate = rate; applyPitchPreservation(audio); });
-        fillAudioElements.forEach(audio => { audio.playbackRate = rate; applyPitchPreservation(audio); });
-        endingAudioElements.forEach(audio => { audio.playbackRate = rate; applyPitchPreservation(audio); });
+        
+        if (isPlaying) {
+            const ctx = getAudioContext();
+            const currentPosition = (ctx.currentTime - startTime) * stemsData[0].sourceNode.playbackRate.value;
+            startTime = ctx.currentTime - (currentPosition / rate);
+
+            stemsData.forEach(stem => {
+                if (stem.sourceNode) stem.sourceNode.playbackRate.value = rate;
+            });
+            fillData.forEach(fill => {
+                if (fill.sourceNode) fill.sourceNode.playbackRate.value = rate;
+            });
+            endingData.forEach(end => {
+                if (end.sourceNode) end.sourceNode.playbackRate.value = rate;
+            });
+        }
     });
 
     function startSyncAndTimer() {
         stopSyncAndTimer();
         syncInterval = setInterval(() => {
-            if (!isPlaying) return;
+            if (!isPlaying || masterDuration === 0) return;
 
-            let master = null;
+            const ctx = getAudioContext();
+            const rate = parseInt(speedSlider.value) / 100;
+            const totalElapsed = (ctx.currentTime - startTime) * rate;
+            
+            const currentPosition = totalElapsed % masterDuration;
+            const newLoopCount = Math.floor(totalElapsed / masterDuration) + 1;
 
-            if (isEndingPlaying && endingAudioElements.length > 0) {
-                master = endingAudioElements[0]; timerLabel.textContent = '🏁 FINALIZANDO';
-            } else if (isFillPlaying && fillAudioElements.length > 0) {
-                master = fillAudioElements[0]; timerLabel.textContent = '🔥 VIRADA';
-            } else if (audioElements.length > 0) {
-                master = audioElements[0]; timerLabel.textContent = 'TEMPO';
-            }
+            if (newLoopCount !== currentLoopCount && !isFillPlaying && !isEndingPlaying) {
+                currentLoopCount = newLoopCount;
+                loopCounter.textContent = currentLoopCount;
 
-            if (!master) return;
-
-            if (master.duration && !isNaN(master.duration)) {
-                const percent = master.currentTime / master.duration;
-                const offset = CIRCLE_CIRCUMFERENCE - (percent * CIRCLE_CIRCUMFERENCE);
-                circleProgress.style.strokeDashoffset = offset;
-            }
-
-            if (!isFillPlaying && !isEndingPlaying) {
-                if (master.currentTime < lastMasterTime - 0.5) {
-                    if (isEndingArmed) {
-                        dispararFinalizacao();
-                    } else if (isFillArmed) {
-                        dispararVirada();
-                    } else {
-                        audioElements.forEach(a => a.currentTime = master.currentTime);
-                    }
+                if (isEndingArmed) {
+                    dispararFinalizacao();
+                } else if (isFillArmed) {
+                    dispararVirada();
                 }
-                lastMasterTime = master.currentTime;
             }
 
-            const current = master.currentTime;
-            const mins = Math.floor(current / 60).toString().padStart(2, '0');
-            const secs = Math.floor(current % 60).toString().padStart(2, '0');
-            const ms = Math.floor((current % 1) * 10);
+            // Atualização da Barra Linear
+            const percent = (currentPosition / masterDuration) * 100;
+            progressBarFill.style.width = `${percent}%`;
+
+            // Tempo Regressivo
+            const remaining = Math.max(0, masterDuration - currentPosition);
+            const mins = Math.floor(remaining / 60).toString().padStart(2, '0');
+            const secs = Math.floor(remaining % 60).toString().padStart(2, '0');
+            const ms = Math.floor((remaining % 1) * 10);
             timerDisplay.textContent = `${mins}:${secs}.${ms}`;
-        }, 60);
+
+            lastMasterTime = currentPosition;
+        }, 50);
     }
 
     function dispararVirada() {
         isFillArmed = false; isFillPlaying = true;
         btnFill.classList.remove('armed'); 
-        circleProgress.classList.remove('armed-fill');
-        circleProgress.classList.add('playing-fill');
+        progressBarFill.classList.remove('playing-fill');
         btnFill.textContent = '🔥 TOCANDO VIRADA...';
 
-        audioElements.forEach(a => a.pause());
+        const ctx = getAudioContext();
+        const rate = parseInt(speedSlider.value) / 100;
 
-        fillAudioElements.forEach(fill => {
-            fill.currentTime = 0;
-            fill.playbackRate = speedSlider.value / 100;
-            applyPitchPreservation(fill);
-            fill.play().catch(e => console.error(e));
+        // Muta temporariamente os loops principais
+        stemsData.forEach(s => { if (s.sourceNode) s.sourceNode.muteVal = s.gainNode.gain.value; s.gainNode.gain.value = 0; });
+
+        fillData.forEach(fill => {
+            if (fill.sourceNode) { try { fill.sourceNode.stop(); } catch(e){} }
+            const source = ctx.createBufferSource();
+            source.buffer = fill.buffer;
+            source.playbackRate.value = rate;
+            source.connect(fill.gainNode);
+            source.start(0);
+            fill.sourceNode = source;
         });
 
-        const masterFill = fillAudioElements[0];
-        const onFillEnd = () => {
+        const masterFillNode = fillData[0].sourceNode;
+        masterFillNode.onended = () => {
             isFillPlaying = false;
-            circleProgress.classList.remove('playing-fill');
-            btnFill.textContent = '🪘 VIRADA / FILL';
-            audioElements.forEach(a => { a.currentTime = 0; a.play().catch(e => console.error(e)); });
-            masterFill.removeEventListener('ended', onFillEnd);
+            btnFill.textContent = '🪘 VIRADA';
+            
+            // Restaura o volume dos loops principais
+            stemsData.forEach(s => { s.gainNode.gain.value = s.isMuted ? 0 : 1; });
         };
-        masterFill.addEventListener('ended', onFillEnd);
     }
 
     function dispararFinalizacao() {
         isEndingArmed = false; isEndingPlaying = true;
         btnStop.classList.remove('armed');
-        circleProgress.classList.remove('armed-ending');
-        circleProgress.classList.add('playing-ending');
+        progressBarFill.classList.remove('playing-ending');
 
-        audioElements.forEach(a => a.pause());
+        const ctx = getAudioContext();
+        const rate = parseInt(speedSlider.value) / 100;
 
-        endingAudioElements.forEach(end => {
-            end.currentTime = 0;
-            end.playbackRate = speedSlider.value / 100;
-            applyPitchPreservation(end);
-            end.play().catch(e => console.error(e));
+        // Para os loops principais
+        stemsData.forEach(s => { if (s.sourceNode) { try { s.sourceNode.stop(); } catch(e){} } });
+
+        endingData.forEach(end => {
+            if (end.sourceNode) { try { end.sourceNode.stop(); } catch(e){} }
+            const source = ctx.createBufferSource();
+            source.buffer = end.buffer;
+            source.playbackRate.value = rate;
+            source.connect(end.gainNode);
+            source.start(0);
+            end.sourceNode = source;
         });
 
-        const masterEnding = endingAudioElements[0];
-        const onEndingEnd = () => {
+        const masterEndingNode = endingData[0].sourceNode;
+        masterEndingNode.onended = () => {
             stopAll();
-            masterEnding.removeEventListener('ended', onEndingEnd);
         };
-        masterEnding.addEventListener('ended', onEndingEnd);
     }
 
     function stopSyncAndTimer() { if (syncInterval) clearInterval(syncInterval); }
-    function clearCurrentAudioObjects() { objectUrls.forEach(url => URL.revokeObjectURL(url)); objectUrls = []; }
 
     // LIMPEZA SELETIVA DE CACHE
     btnClearCache.addEventListener('click', async () => {
         const selectedIndex = trackSelect.value;
         if (selectedIndex === '') { toastMessage.textContent = 'Selecione uma música para limpar o cache.'; return; }
 
-        stopAll(); clearCurrentAudioObjects();
+        stopAll();
         const selectedSong = songsData[selectedIndex];
         
         try {
@@ -710,8 +784,8 @@
                 if (await cache.delete(track.url)) removedCount++;
             }
 
-            audioElements = []; fillAudioElements = []; endingAudioElements = [];
-            stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione uma música para carregar os canais.</div>';
+            stemsData = []; fillData = []; endingData = [];
+            stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione um ritmo / música para carregar os canais/instrumentos.</div>';
             btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true;
             trackSelect.value = '';
 
