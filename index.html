@@ -1,9 +1,16 @@
 <!DOCTYPE html>
+<!-- 
+  ==============================================================================
+  Para conectar este site a outro Google Sheets / Web App:
+  1. Ir até a tag <script> abaixo (por volta da linha 430).
+  2. Alterar a constante WEB_APP_URL com a nova URL do Apps Script.
+  ==============================================================================
+-->
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BTK - Multi-Track</title>
+    <title>BTK - Multi-Track Studio</title>
     <style>
         :root {
             --bg-color: #121212;
@@ -80,6 +87,35 @@
             outline: none; text-transform: uppercase;
         }
 
+        .nav-tabs {
+            display: flex;
+            background: #2a2a2a;
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            background: transparent;
+            color: var(--subtext-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        .tab-content { display: none; flex-direction: column; gap: 12px; }
+        .tab-content.active { display: flex; }
+
         .header {
             display: flex;
             justify-content: space-between;
@@ -105,7 +141,6 @@
             outline: none; cursor: pointer;
         }
 
-        /* PAINEL DE TEMPO COMPACTO COM BARRA LINEAR */
         .timer-box {
             text-align: center; background: #181818;
             padding: 10px 14px; border-radius: 12px;
@@ -147,6 +182,11 @@
         .progress-bar-fill.playing-fill { background: var(--fill-color); }
         .progress-bar-fill.playing-ending { background: var(--ending-color); }
 
+        .playlist-info-badge {
+            font-size: 0.8rem; background: #252525; padding: 6px 12px;
+            border-radius: 20px; color: var(--accent-color); border: 1px solid #333;
+        }
+
         .speed-control { display: flex; flex-direction: column; gap: 4px; }
         .speed-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: bold; }
 
@@ -172,6 +212,11 @@
             grid-column: span 2; font-size: 0.95rem;
         }
         .btn-fill.armed { animation: pulse 0.8s infinite alternate; background: #ff5252; }
+
+        .btn-add-playlist {
+            background: #2e7d32; color: #fff; padding: 10px;
+            font-size: 0.8rem; border-radius: 8px; font-weight: bold;
+        }
 
         .btn-clear-cache {
             background: transparent; color: var(--subtext-color);
@@ -201,6 +246,39 @@
         .btn-toggle.on { background: var(--success-color); color: #fff; }
         .btn-toggle.off { background: var(--btn-off); color: var(--subtext-color); }
 
+        .playlist-container {
+            display: flex; flex-direction: column; gap: 8px;
+            max-height: 320px; overflow-y: auto;
+        }
+
+        .playlist-item {
+            background: #181818; border: 1px solid #333; padding: 8px 12px;
+            border-radius: 8px; display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .playlist-item.active {
+            border-color: var(--accent-color); background: rgba(255, 152, 0, 0.1);
+        }
+
+        .playlist-item-title { font-size: 0.85rem; font-weight: bold; }
+        .playlist-item-actions { display: flex; gap: 4px; }
+
+        .btn-mini {
+            padding: 4px 8px; font-size: 0.7rem; border-radius: 4px; background: #333; color: #fff;
+        }
+
+        .pedal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .pedal-card {
+            background: #181818; padding: 8px; border-radius: 8px;
+            border: 1px solid #333; display: flex; flex-direction: column; gap: 4px;
+        }
+        .pedal-title { font-size: 0.8rem; font-weight: bold; color: var(--accent-color); display: flex; justify-content: space-between; }
+        .pedal-key-badge { font-size: 0.65rem; background: #333; padding: 2px 4px; border-radius: 4px; color: var(--subtext-color); }
+        .test-box {
+            background: #181818; border: 2px dashed #444; padding: 10px;
+            border-radius: 8px; text-align: center; font-size: 0.75rem; color: var(--subtext-color);
+        }
+        .test-box.active { border-color: var(--success-color); color: var(--success-color); font-weight: bold; }
         .toast { font-size: 0.75rem; text-align: center; color: var(--subtext-color); min-height: 16px; }
     </style>
 </head>
@@ -220,45 +298,129 @@
         <span id="status" class="status-badge">Detectando...</span>
     </div>
 
-    <div>
-        <select id="trackSelect" disabled>
-            <option>Carregando lista...</option>
-        </select>
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('playerTab')">🎛️ Player</button>
+        <button class="tab-btn" onclick="switchTab('playlistTab')">📋 Playlist</button>
+        <button class="tab-btn" onclick="switchTab('pedalTab')">🦿 Pedal</button>
     </div>
 
-    <!-- PAINEL DE TEMPO COMPACTO COM BARRA LINEAR -->
-    <div class="timer-box">
-        <div class="timer-inner-content">
-            <span id="timerDisplay" class="timer-display">00:00.0</span>
-            <span id="loopCounter" class="loop-display">1</span>
+    <!-- TELA 1: PLAYER -->
+    <div id="playerTab" class="tab-content active">
+        <div>
+            <select id="trackSelect" disabled>
+                <option>Carregando lista...</option>
+            </select>
         </div>
-        <div class="progress-bar-bg">
-            <div id="progressBarFill" class="progress-bar-fill"></div>
+
+        <div id="playlistInfoBadge" class="playlist-info-badge" style="display: none; text-align: center;">
+            📍 Sequência do Show: <b id="playlistPosText">0 / 0</b>
+        </div>
+
+        <div class="timer-box">
+            <div class="timer-inner-content">
+                <span id="timerDisplay" class="timer-display">00:00.0</span>
+                <span id="loopCounter" class="loop-display">1</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div id="progressBarFill" class="progress-bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="speed-control">
+            <div class="speed-header">
+                <span>⏱️ VELOCIDADE</span>
+                <span id="speedDisplay">100%</span>
+            </div>
+            <input type="range" id="speedSlider" min="50" max="150" value="100" step="5">
+        </div>
+
+        <div class="player-controls">
+            <button id="btnPlay" class="btn-play" disabled>PLAY</button>
+            <button id="btnStop" class="btn-stop" disabled>STOP</button>
+            <button id="btnFill" class="btn-fill" disabled>🪘 VIRADA / FILL</button>
+        </div>
+
+        <button id="btnAddPlaylist" class="btn-add-playlist" disabled>➕ ADICIONAR À PLAYLIST</button>
+
+        <div id="stemsContainer" class="stems-container">
+            <div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">
+                Selecione uma música para carregar os canais.
+            </div>
+        </div>
+
+        <div id="toastMessage" class="toast">Aguardando ativação...</div>
+        <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudio Selecionado do Cache</button>
+    </div>
+
+    <!-- TELA 3: PLAYLIST -->
+    <div id="playlistTab" class="tab-content">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <b style="font-size: 0.9rem;">📋 Fila de Execução do Show</b>
+            <button class="btn-mini" onclick="clearPlaylist()" style="background: var(--error-color);">🗑️ Limpar Tudo</button>
+        </div>
+
+        <div id="playlistItems" class="playlist-container">
+            <div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem; padding: 20px;">
+                Sua playlist está vazia.<br>Selecione músicas no Player e clique em "Adicionar à Playlist".
+            </div>
         </div>
     </div>
 
-    <div class="speed-control">
-        <div class="speed-header">
-            <span>Velocidade</span>
-            <span id="speedDisplay">100%</span>
+    <!-- TELA 2: PEDAL -->
+    <div id="pedalTab" class="tab-content">
+        <div style="font-size: 0.8rem; color: var(--subtext-color); text-align: center;">
+            Mapeamento do Chocolate Plus no modo <b>Keyboard B</b>:
         </div>
-        <input type="range" id="speedSlider" min="70" max="130" value="100" step="5">
-    </div>
 
-    <div class="player-controls">
-        <button id="btnPlay" class="btn-play" disabled>PLAY</button>
-        <button id="btnStop" class="btn-stop" disabled>STOP</button>
-        <button id="btnFill" class="btn-fill" disabled>🪘 VIRADA</button>
-    </div>
+        <div class="pedal-grid">
+            <div class="pedal-card">
+                <div class="pedal-title"><span>PEDAL A</span><span class="pedal-key-badge">PageUp</span></div>
+                <select id="actionPedalA" onchange="savePedalConfig()">
+                    <option value="stop">⏹ Stop / Finalização</option>
+                    <option value="play">▶ Play / Pause</option>
+                    <option value="fill">🪘 Virada / Fill</option>
+                    <option value="next_track">⏭️ Próxima (Playlist)</option>
+                    <option value="speed_up">⏱️ Velocidade +5%</option>
+                </select>
+            </div>
 
-    <div id="stemsContainer" class="stems-container">
-        <div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">
-            Selecione um ritmo / música para carregar os canais/instrumentos.
+            <div class="pedal-card">
+                <div class="pedal-title"><span>PEDAL B</span><span class="pedal-key-badge">PageDown</span></div>
+                <select id="actionPedalB" onchange="savePedalConfig()">
+                    <option value="play">▶ Play / Pause</option>
+                    <option value="fill">🪘 Virada / Fill</option>
+                    <option value="stop">⏹ Stop / Finalização</option>
+                    <option value="next_track">⏭️ Próxima (Playlist)</option>
+                    <option value="speed_up">⏱️ Velocidade +5%</option>
+                </select>
+            </div>
+
+            <div class="pedal-card">
+                <div class="pedal-title"><span>PEDAL C</span><span class="pedal-key-badge">Espaço</span></div>
+                <select id="actionPedalC" onchange="savePedalConfig()">
+                    <option value="fill">🪘 Virada / Fill</option>
+                    <option value="play">▶ Play / Pause</option>
+                    <option value="stop">⏹ Stop / Finalização</option>
+                    <option value="next_track">⏭️ Próxima (Playlist)</option>
+                </select>
+            </div>
+
+            <div class="pedal-card">
+                <div class="pedal-title"><span>PEDAL D</span><span class="pedal-key-badge">Enter</span></div>
+                <select id="actionPedalD" onchange="savePedalConfig()">
+                    <option value="next_track">⏭️ Próxima (Playlist)</option>
+                    <option value="speed_up">⏱️ Velocidade +5%</option>
+                    <option value="play">▶ Play / Pause</option>
+                    <option value="fill">🪘 Virada / Fill</option>
+                    <option value="stop">⏹ Stop / Finalização</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="testPedalBox" class="test-box">
+            🦶 <b>TESTE DO PEDAL:</b> Pise em qualquer botão do Chocolate Plus para validar o sinal.
         </div>
     </div>
-
-    <div id="toastMessage" class="toast">Aguardando ativação...</div>
-    <button id="btnClearCache" class="btn-clear-cache">🗑️ Limpar Áudio Selecionado do Cache</button>
 </div>
 
 <script>
@@ -277,6 +439,7 @@
     const btnPlay = document.getElementById('btnPlay');
     const btnStop = document.getElementById('btnStop');
     const btnFill = document.getElementById('btnFill');
+    const btnAddPlaylist = document.getElementById('btnAddPlaylist');
     const btnClearCache = document.getElementById('btnClearCache');
     const stemsContainer = document.getElementById('stemsContainer');
     const statusBadge = document.getElementById('status');
@@ -295,6 +458,8 @@
     }
 
     let songsData = [];
+    let playlist = [];
+    let currentPlaylistIndex = -1;
 
     // ESTRUTURAS DE CANAIS
     let stemsData = [];      // { name, buffer, gainNode, sourceNode, isMuted }
@@ -306,14 +471,36 @@
     let isFillPlaying = false;
     let isEndingArmed = false;
     let isEndingPlaying = false;
-
+    
     let startTime = 0;       // Momento do audioCtx em que o áudio começou a tocar
     let startOffset = 0;     // Posição acumulada ao pausar (em segundos)
     let masterDuration = 0;  // Duração exata do loop mestre em segundos
     let currentLoopCount = 1;
     let syncInterval = null;
-    let lastMasterTime = 0;
     let currentOriginalBpm = null;
+
+    let pedalConfig = {
+        'pageup': 'stop',
+        'pagedown': 'play',
+        ' ': 'fill',
+        'enter': 'next_track'
+    };
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        if (tabId === 'playerTab') {
+            document.querySelectorAll('.tab-btn')[0].classList.add('active');
+            document.getElementById('playerTab').classList.add('active');
+        } else if (tabId === 'playlistTab') {
+            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('playlistTab').classList.add('active');
+        } else {
+            document.querySelectorAll('.tab-btn')[2].classList.add('active');
+            document.getElementById('pedalTab').classList.add('active');
+        }
+    }
 
     function checkLicense() {
         const savedKey = localStorage.getItem('btk_license_key');
@@ -336,7 +523,32 @@
         }
     });
 
+    function loadPedalConfig() {
+        const saved = localStorage.getItem('btk_pedal_config');
+        if (saved) {
+            try {
+                pedalConfig = JSON.parse(saved);
+                document.getElementById('actionPedalA').value = pedalConfig['pageup'] || 'stop';
+                document.getElementById('actionPedalB').value = pedalConfig['pagedown'] || 'play';
+                document.getElementById('actionPedalC').value = pedalConfig[' '] || 'fill';
+                document.getElementById('actionPedalD').value = pedalConfig['enter'] || 'next_track';
+            } catch(e){}
+        }
+    }
+
+    function savePedalConfig() {
+        pedalConfig = {
+            'pageup': document.getElementById('actionPedalA').value,
+            'pagedown': document.getElementById('actionPedalB').value,
+            ' ': document.getElementById('actionPedalC').value,
+            'enter': document.getElementById('actionPedalD').value
+        };
+        localStorage.setItem('btk_pedal_config', JSON.stringify(pedalConfig));
+    }
+
     async function initApp() {
+        loadPedalConfig();
+        loadPlaylistFromStorage();
         await loadSongs();
     }
 
@@ -350,18 +562,18 @@
 
             localStorage.setItem('btk_songs_manifest', JSON.stringify(songsData));
             updateStatus('Online', 'online');
-            toastMessage.textContent = 'Músicas carregadas!';
+            toastMessage.textContent = 'Músicas atualizadas com sucesso!';
             await populateSelect(songsData);
         } catch (error) {
             const cached = localStorage.getItem('btk_songs_manifest');
             if (cached) {
                 songsData = JSON.parse(cached);
                 updateStatus('Modo Offline', 'offline');
-                toastMessage.textContent = 'Modo Offline: Lista em cache.';
+                toastMessage.textContent = 'Modo Offline: Lista carregada do cache.';
                 await populateSelect(songsData);
             } else {
                 updateStatus('Erro', 'offline');
-                toastMessage.textContent = 'Erro de conexão com o servidor.';
+                toastMessage.textContent = 'Erro ao carregar repertório do servidor.';
             }
         }
     }
@@ -436,44 +648,42 @@
         }
     }
 
-    trackSelect.addEventListener('change', async (e) => {
+    async function loadSongByIndex(index, presetStemStates = null, presetSpeed = null) {
         stopAll();
 
-        const index = e.target.value;
-        if (index === '') {
-            btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true;
+        if (index === '' || index < 0 || index >= songsData.length) {
+            btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true; btnAddPlaylist.disabled = true;
             stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione uma música para carregar os canais.</div>';
             return;
         }
 
+        trackSelect.value = index;
         const selectedSong = songsData[index];
         currentOriginalBpm = selectedSong.originalBpm;
+
+        if (presetSpeed) speedSlider.value = presetSpeed;
         updateSpeedDisplay();
 
-        btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true;
+        btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true; btnAddPlaylist.disabled = true;
         stemsContainer.innerHTML = '';
-        stemsData = []; fillData = []; endingData = [];
+        stemsData = []; fillData = []; endingData = []; currentStemStates = [];
 
         try {
             const ctx = getAudioContext();
 
-            // Filtra e exibe APENAS os loops principais (oculta viradas e fins da lista visual)
             for (let i = 0; i < selectedSong.tracks.length; i++) {
                 const track = selectedSong.tracks[i];
-                
-                const lowerName = track.name.toLowerCase();
-                if (lowerName.includes('_vira') || lowerName.includes('_fill') || lowerName.includes('_fim') || lowerName.includes('_final')) {
-                    continue;
-                }
-
                 toastMessage.textContent = `Decodificando ${track.name} (${i + 1}/${selectedSong.tracks.length})...`;
                 
                 const buffer = await loadAudioBuffer(track.url);
                 const gainNode = ctx.createGain();
-                gainNode.gain.value = 1;
+                
+                const isInitialOn = presetStemStates ? presetStemStates[i] : true;
+                gainNode.gain.value = isInitialOn ? 1 : 0;
+                currentStemStates.push(isInitialOn);
 
                 gainNode.connect(ctx.destination);
-                stemsData.push({ name: track.name, buffer: buffer, gainNode: gainNode, sourceNode: null, isMuted: false });
+                stemsData.push({ name: track.name, buffer: buffer, gainNode: gainNode, sourceNode: null, isMuted: !isInitialOn });
 
                 const row = document.createElement('div');
                 row.className = 'stem-row';
@@ -483,16 +693,16 @@
                 title.textContent = track.name;
 
                 const toggleBtn = document.createElement('button');
-                toggleBtn.className = 'btn-toggle on';
-                toggleBtn.textContent = 'ON';
+                toggleBtn.className = isInitialOn ? 'btn-toggle on' : 'btn-toggle off';
+                toggleBtn.textContent = isInitialOn ? 'ON' : 'OFF';
 
                 toggleBtn.addEventListener('click', () => {
                     if (gainNode.gain.value > 0) {
                         gainNode.gain.value = 0; toggleBtn.textContent = 'OFF'; toggleBtn.className = 'btn-toggle off';
-                        stemsData[stemsData.length - 1].isMuted = true;
+                        currentStemStates[i] = false;
                     } else {
                         gainNode.gain.value = 1; toggleBtn.textContent = 'ON'; toggleBtn.className = 'btn-toggle on';
-                        stemsData[stemsData.length - 1].isMuted = false;
+                        currentStemStates[i] = true;
                     }
                 });
 
@@ -502,7 +712,6 @@
 
             masterDuration = stemsData[0].buffer.duration;
 
-            // Carrega viradas em segundo plano (sem criar linhas na tela)
             if (selectedSong.fillTracks && selectedSong.fillTracks.length > 0) {
                 for (let f = 0; f < selectedSong.fillTracks.length; f++) {
                     const fillBuffer = await loadAudioBuffer(selectedSong.fillTracks[f].url);
@@ -515,7 +724,6 @@
                 btnFill.disabled = true;
             }
 
-            // Carrega finalizações em segundo plano (sem criar linhas na tela)
             if (selectedSong.endingTracks && selectedSong.endingTracks.length > 0) {
                 for (let e = 0; e < selectedSong.endingTracks.length; e++) {
                     const endBuffer = await loadAudioBuffer(selectedSong.endingTracks[e].url);
@@ -525,7 +733,7 @@
                 }
             }
 
-            btnPlay.disabled = false; btnStop.disabled = false;
+            btnPlay.disabled = false; btnStop.disabled = false; btnAddPlaylist.disabled = false;
             toastMessage.textContent = `Pronto! ${selectedSong.name} carregado.`;
             await updateSelectCacheIndicators();
 
@@ -533,7 +741,166 @@
             toastMessage.textContent = 'Erro ao carregar e decodificar os canais.';
             console.error(err);
         }
+    }
+
+    trackSelect.addEventListener('change', (e) => {
+        loadSongByIndex(e.target.value);
     });
+
+    btnAddPlaylist.addEventListener('click', () => {
+        const selectedIndex = trackSelect.value;
+        if (selectedIndex === '') return;
+
+        const song = songsData[selectedIndex];
+        playlist.push({
+            songIndex: selectedIndex,
+            name: song.name,
+            stemStates: [...currentStemStates],
+            speed: speedSlider.value
+        });
+
+        savePlaylistToStorage();
+        renderPlaylistUI();
+        toastMessage.textContent = `"${song.name}" adicionada à playlist!`;
+    });
+
+    // LIMPEZA SELETIVA DE CACHE
+    btnClearCache.addEventListener('click', async () => {
+        const selectedIndex = trackSelect.value;
+        if (selectedIndex === '') { 
+            toastMessage.textContent = 'Selecione uma música para limpar o cache.'; 
+            return; 
+        }
+
+        stopAll(); 
+        const selectedSong = songsData[selectedIndex];
+        
+        try {
+            const cache = await caches.open(CACHE_NAME);
+            let removedCount = 0;
+            const allTrackUrls = [
+                ...selectedSong.tracks,
+                ...(selectedSong.fillTracks || []),
+                ...(selectedSong.endingTracks || [])
+            ];
+
+            for (const track of allTrackUrls) {
+                if (await cache.delete(track.url)) removedCount++;
+            }
+
+            stemsData = []; fillData = []; endingData = [];
+            stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione uma música para carregar os canais.</div>';
+            btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true; btnAddPlaylist.disabled = true;
+            trackSelect.value = '';
+
+            await updateSelectCacheIndicators();
+            toastMessage.textContent = `Cache de "${selectedSong.name}" limpo! (${removedCount} arquivos removidos)`;
+        } catch (e){
+            toastMessage.textContent = 'Erro ao tentar limpar o cache.';
+        }
+    });
+
+    function savePlaylistToStorage() {
+        localStorage.setItem('btk_playlist_data', JSON.stringify(playlist));
+    }
+
+    function loadPlaylistFromStorage() {
+        const saved = localStorage.getItem('btk_playlist_data');
+        if (saved) {
+            try { playlist = JSON.parse(saved); renderPlaylistUI(); } catch(e){}
+        }
+    }
+
+    function renderPlaylistUI() {
+        const container = document.getElementById('playlistItems');
+        const badge = document.getElementById('playlistInfoBadge');
+
+        if (playlist.length === 0) {
+            container.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem; padding: 20px;">Sua playlist está vazia.<br>Selecione músicas no Player e clique em "Adicionar à Playlist".</div>';
+            badge.style.display = 'none';
+            return;
+        }
+
+        badge.style.display = 'block';
+        document.getElementById('playlistPosText').textContent = `${currentPlaylistIndex + 1} / ${playlist.length}`;
+
+        container.innerHTML = '';
+        playlist.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = `playlist-item ${index === currentPlaylistIndex ? 'active' : ''}`;
+
+            const title = document.createElement('span');
+            title.className = 'playlist-item-title';
+            title.textContent = `${index + 1}. ${item.name} (${item.speed}%)`;
+
+            const actions = document.createElement('div');
+            actions.className = 'playlist-item-actions';
+
+            const btnPlayItem = document.createElement('button');
+            btnPlayItem.className = 'btn-mini';
+            btnPlayItem.textContent = '▶ Carregar';
+            btnPlayItem.onclick = () => loadPlaylistItem(index);
+
+            const btnUp = document.createElement('button');
+            btnUp.className = 'btn-mini'; btnUp.textContent = '▲';
+            btnUp.onclick = () => movePlaylistItem(index, -1);
+
+            const btnDown = document.createElement('button');
+            btnDown.className = 'btn-mini'; btnDown.textContent = '▼';
+            btnDown.onclick = () => movePlaylistItem(index, 1);
+
+            const btnDel = document.createElement('button');
+            btnDel.className = 'btn-mini'; btnDel.textContent = '✖';
+            btnDel.style.background = 'var(--error-color)';
+            btnDel.onclick = () => removePlaylistItem(index);
+
+            actions.appendChild(btnPlayItem);
+            actions.appendChild(btnUp);
+            actions.appendChild(btnDown);
+            actions.appendChild(btnDel);
+
+            row.appendChild(title);
+            row.appendChild(actions);
+            container.appendChild(row);
+        });
+    }
+
+    function movePlaylistItem(index, direction) {
+        const target = index + direction;
+        if (target < 0 || target >= playlist.length) return;
+        const temp = playlist[index];
+        playlist[index] = playlist[target];
+        playlist[target] = temp;
+        savePlaylistToStorage();
+        renderPlaylistUI();
+    }
+
+    function removePlaylistItem(index) {
+        playlist.splice(index, 1);
+        if (currentPlaylistIndex >= playlist.length) currentPlaylistIndex = playlist.length - 1;
+        savePlaylistToStorage();
+        renderPlaylistUI();
+    }
+
+    function clearPlaylist() {
+        playlist = []; currentPlaylistIndex = -1;
+        savePlaylistToStorage(); renderPlaylistUI();
+    }
+
+    async function loadPlaylistItem(index) {
+        if (index < 0 || index >= playlist.length) return;
+        currentPlaylistIndex = index;
+        renderPlaylistUI();
+        const item = playlist[index];
+        await loadSongByIndex(item.songIndex, item.stemStates, item.speed);
+    }
+
+    async function loadNextPlaylistItem() {
+        if (playlist.length === 0) return;
+        let nextIndex = currentPlaylistIndex + 1;
+        if (nextIndex >= playlist.length) nextIndex = 0;
+        await loadPlaylistItem(nextIndex);
+    }
 
     btnFill.addEventListener('click', () => {
         if (!isPlaying || fillData.length === 0) return;
@@ -544,7 +911,7 @@
         } else {
             isFillArmed = false; btnFill.classList.remove('armed');
             progressBarFill.classList.remove('playing-fill');
-            btnFill.textContent = '🪘 VIRADA';
+            btnFill.textContent = '🪘 VIRADA / FILL';
         }
     });
 
@@ -629,7 +996,7 @@
         isEndingArmed = false; isEndingPlaying = false;
         startOffset = 0; currentLoopCount = 1;
 
-        btnFill.classList.remove('armed'); btnFill.textContent = '🪘 VIRADA';
+        btnFill.classList.remove('armed'); btnFill.textContent = '🪘 VIRADA / FILL';
         btnStop.classList.remove('armed'); btnStop.textContent = 'STOP';
         
         progressBarFill.className = 'progress-bar-fill';
@@ -727,7 +1094,7 @@
         const masterFillNode = fillData[0].sourceNode;
         masterFillNode.onended = () => {
             isFillPlaying = false;
-            btnFill.textContent = '🪘 VIRADA';
+            btnFill.textContent = '🪘 VIRADA / FILL';
             
             // Restaura o volume dos loops principais
             stemsData.forEach(s => { s.gainNode.gain.value = s.isMuted ? 0 : 1; });
@@ -758,72 +1125,61 @@
         const masterEndingNode = endingData[0].sourceNode;
         masterEndingNode.onended = () => {
             stopAll();
+            if (playlist.length > 0) {
+                toastMessage.textContent = 'Finalização concluída. Carregando próxima música...';
+                loadNextPlaylistItem();
+            }
         };
     }
 
     function stopSyncAndTimer() { if (syncInterval) clearInterval(syncInterval); }
-
-    // LIMPEZA SELETIVA DE CACHE
-    btnClearCache.addEventListener('click', async () => {
-        const selectedIndex = trackSelect.value;
-        if (selectedIndex === '') { toastMessage.textContent = 'Selecione uma música para limpar o cache.'; return; }
-
-        stopAll();
-        const selectedSong = songsData[selectedIndex];
-        
-        try {
-            const cache = await caches.open(CACHE_NAME);
-            let removedCount = 0;
-            const allTrackUrls = [
-                ...selectedSong.tracks,
-                ...(selectedSong.fillTracks || []),
-                ...(selectedSong.endingTracks || [])
-            ];
-
-            for (const track of allTrackUrls) {
-                if (await cache.delete(track.url)) removedCount++;
-            }
-
-            stemsData = []; fillData = []; endingData = [];
-            stemsContainer.innerHTML = '<div style="text-align: center; color: var(--subtext-color); font-size: 0.85rem;">Selecione um ritmo / música para carregar os canais/instrumentos.</div>';
-            btnPlay.disabled = true; btnStop.disabled = true; btnFill.disabled = true;
-            trackSelect.value = '';
-
-            await updateSelectCacheIndicators();
-            toastMessage.textContent = `Cache de "${selectedSong.name}" limpo com sucesso! (${removedCount} arquivos removidos)`;
-        } catch (e){
-            toastMessage.textContent = 'Erro ao tentar limpar o cache.';
-        }
-    });
 
     function updateStatus(text, type) {
         statusBadge.textContent = text;
         statusBadge.className = `status-badge ${type}`;
     }
 
+    function triggerAction(actionName) {
+        switch (actionName) {
+            case 'play': if (!btnPlay.disabled) btnPlay.click(); break;
+            case 'fill': if (!btnFill.disabled) btnFill.click(); break;
+            case 'stop': if (!btnStop.disabled) btnStop.click(); break;
+            case 'next_track': loadNextPlaylistItem(); break;
+            case 'speed_up':
+                speedSlider.value = Math.min(150, parseInt(speedSlider.value) + 5);
+                speedSlider.dispatchEvent(new Event('input'));
+                break;
+        }
+    }
+
     document.addEventListener('keydown', (e) => {
         if (document.activeElement === licenseKeyInput) return;
         if (document.activeElement === trackSelect) trackSelect.blur();
 
-        const key = e.key.toLowerCase();
+        const rawKey = e.key;
+        const key = rawKey.toLowerCase();
+
+        const testBox = document.getElementById('testPedalBox');
+        if (testBox) {
+            testBox.classList.add('active');
+            testBox.innerHTML = `✅ SINAL RECEBIDO! Tecla enviada pelo pedal: <b>"${rawKey}"</b> (code: ${e.code})`;
+            setTimeout(() => testBox.classList.remove('active'), 1200);
+        }
 
         if ([' ', 'pagedown', 'pageup', 'arrowup', 'arrowdown'].includes(key)) {
             e.preventDefault();
         }
 
+        if (pedalConfig[key]) {
+            triggerAction(pedalConfig[key]);
+            return;
+        }
+
         switch (key) {
             case ' ':
-            case 'pagedown':
-            case 'enter': 
-                if (!btnPlay.disabled) btnPlay.click(); 
-                break;
-            case 'pageup':
-            case 'escape': 
-                if (!btnStop.disabled) btnStop.click(); 
-                break;
-            case 'v': 
-                if (!btnFill.disabled) btnFill.click(); 
-                break;
+            case 'enter': triggerAction('play'); break;
+            case 'escape': triggerAction('stop'); break;
+            case 'v': triggerAction('fill'); break;
         }
     });
 
